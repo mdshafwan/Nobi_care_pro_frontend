@@ -12,7 +12,8 @@ import {
   Stethoscope, 
   Bot,
   Plus,
-  Layers
+  Layers,
+  MessageSquare
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -29,11 +30,13 @@ export default function Sidebar() {
       { name: 'Symptom Checker', path: '/symptom-checker', icon: Stethoscope },
       { name: 'AI Clinical Assistant', path: '/ai-assistant', icon: Bot },
       { name: 'Lab Diagnostics OCR', path: '/lab-ocr', icon: ScanLine },
+      { name: 'Care Team Chat', path: '/care-messages', icon: MessageSquare },
       { name: 'Settings & Profile', path: '/profile-settings', icon: UserCog },
     ],
     doctor: [
       { name: 'Emergency Triage', path: '/doctor-triage', icon: Activity },
       { name: 'AI Approvals (E-Rx)', path: '/doctor-approvals', icon: FileCheck2 },
+      { name: 'Patient Messages', path: '/care-messages', icon: MessageSquare },
       { name: 'Settings & Profile', path: '/profile-settings', icon: UserCog },
     ],
     admin: [

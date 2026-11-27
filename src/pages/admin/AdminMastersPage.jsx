@@ -19,93 +19,119 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
-// --- DEFAULT INITIAL MASTER DATA ---
+// Default Master Payment Methods
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'PM-1', name: 'Credit Card', code: 'CC', active: true },
+  { id: 'PM-1', name: 'Credit Card / Terminal', code: 'CC', active: true },
   { id: 'PM-2', name: 'Bank Transfer (NEFT/RTGS)', code: 'BANK', active: true },
-  { id: 'PM-3', name: 'Digital / UPI / Online', code: 'UPI', active: true },
-  { id: 'PM-4', name: 'Cash Counter', code: 'CASH', active: true }
+  { id: 'PM-3', name: 'Digital / UPI Gateway', code: 'UPI', active: true },
+  { id: 'PM-4', name: 'Cash Counter / Desk', code: 'CASH', active: true }
 ];
 
+// Default Payment Sub-Accounts / Merchant Terminals
 const INITIAL_PAYMENT_TYPES = [
   { id: 'PT-1', methodId: 'PM-1', name: 'Axis Bank Credit Card Terminal', accountNo: 'TERM-AXIS-091', active: true },
-  { id: 'PT-2', methodId: 'PM-1', name: 'HDFC Corporate Visa Card', accountNo: 'TERM-HDFC-441', active: true },
+  { id: 'PT-2', methodId: 'PM-1', name: 'HDFC Corporate Visa Terminal', accountNo: 'TERM-HDFC-441', active: true },
   { id: 'PT-3', methodId: 'PM-2', name: 'HDFC Hospital Operating A/C', accountNo: 'AC-50200019284', active: true },
   { id: 'PT-4', methodId: 'PM-2', name: 'SBI Medical Treasury A/C', accountNo: 'AC-30918290192', active: true },
-  { id: 'PT-5', methodId: 'PM-3', name: 'Stripe Global Healthcare Gateway', accountNo: 'STRIPE-LIVE-INT', active: true },
-  { id: 'PT-6', methodId: 'PM-3', name: 'Hospital UPI (GPay/PhonePe)', accountNo: 'nobicare@hdfcbank', active: true },
+  { id: 'PT-5', methodId: 'PM-3', name: 'Stripe Healthcare Gateway', accountNo: 'STRIPE-LIVE-INT', active: true },
+  { id: 'PT-6', methodId: 'PM-3', name: 'Hospital Quick-UPI Desk', accountNo: 'nobicare@hdfcbank', active: true },
   { id: 'PT-7', methodId: 'PM-4', name: 'Emergency Triage Cash Desk', accountNo: 'DRAWER-ED-01', active: true }
 ];
 
-const INITIAL_WARDS = [
-  { id: 'W-1', name: 'Cardiology Intensive Care (ICU)', department: 'Cardiology', floor: '3rd Floor - Wing A', ratePerDay: 450 },
-  { id: 'W-2', name: 'Emergency Trauma & Rapid Bay', department: 'Emergency Medicine', floor: 'Ground Floor', ratePerDay: 300 },
-  { id: 'W-3', name: 'General Medical Inpatient Ward', department: 'Internal Medicine', floor: '2nd Floor - Wing B', ratePerDay: 150 },
-  { id: 'W-4', name: 'Pediatric Care Unit', department: 'Pediatrics', floor: '4th Floor - Wing C', ratePerDay: 200 }
-];
-
-const INITIAL_BEDS = [
-  { id: 'BED-101', wardId: 'W-1', roomNo: 'Room 301', bedNo: 'Bed 301-A', status: 'Occupied', patientName: 'Eleanor Vance', mrn: 'MRN-884920' },
-  { id: 'BED-102', wardId: 'W-1', roomNo: 'Room 301', bedNo: 'Bed 301-B', status: 'Available', patientName: null, mrn: null },
-  { id: 'BED-103', wardId: 'W-1', roomNo: 'Room 302', bedNo: 'Bed 302-A', status: 'Available', patientName: null, mrn: null },
-  { id: 'BED-201', wardId: 'W-2', roomNo: 'Bay 1', bedNo: 'Bed ED-01 (Trauma)', status: 'Occupied', patientName: 'Marcus Brody', mrn: 'MRN-339102' },
-  { id: 'BED-202', wardId: 'W-2', roomNo: 'Bay 2', bedNo: 'Bed ED-02 (Rapid)', status: 'Available', patientName: null, mrn: null },
-  { id: 'BED-203', wardId: 'W-2', roomNo: 'Bay 3', bedNo: 'Bed ED-03 (Cardiac)', status: 'Occupied', patientName: 'Sophia Loren', mrn: 'MRN-551094' },
-  { id: 'BED-301', wardId: 'W-3', roomNo: 'Room 201', bedNo: 'Bed 201-A', status: 'Available', patientName: null, mrn: null },
-  { id: 'BED-302', wardId: 'W-3', roomNo: 'Room 201', bedNo: 'Bed 201-B', status: 'Occupied', patientName: 'David Hemmings', mrn: 'MRN-774102' },
-  { id: 'BED-303', wardId: 'W-3', roomNo: 'Room 202', bedNo: 'Bed 202-A', status: 'Available', patientName: null, mrn: null },
-  { id: 'BED-401', wardId: 'W-4', roomNo: 'Room 401', bedNo: 'Bed 401-A', status: 'Available', patientName: null, mrn: null }
+// Standardized Ward Inventory Contract (Compatible with Doctor Triage)
+const INITIAL_WARD_MASTER = [
+  { 
+    id: 'W-1', 
+    name: 'Cardiology Intensive Care (ICU)', 
+    department: 'Cardiology', 
+    floor: '3rd Floor - Wing A', 
+    tariff: 450,
+    ratePerDay: 450,
+    beds: [
+      { id: 'BED-101', roomNo: 'Room 301', bedNo: 'Bed 301-A', status: 'Occupied', patient: 'Eleanor Vance', mrn: 'MRN-884920' },
+      { id: 'BED-102', roomNo: 'Room 301', bedNo: 'Bed 301-B', status: 'Available', patient: null, mrn: null },
+      { id: 'BED-103', roomNo: 'Room 302', bedNo: 'Bed 302-A', status: 'Available', patient: null, mrn: null }
+    ]
+  },
+  { 
+    id: 'W-2', 
+    name: 'Emergency Trauma & Rapid Bay', 
+    department: 'Emergency Medicine', 
+    floor: 'Ground Floor', 
+    tariff: 300,
+    ratePerDay: 300,
+    beds: [
+      { id: 'BED-201', roomNo: 'Bay 1', bedNo: 'Bed ED-01 (Trauma)', status: 'Occupied', patient: 'Marcus Brody', mrn: 'MRN-339102' },
+      { id: 'BED-202', roomNo: 'Bay 2', bedNo: 'Bed ED-02 (Rapid)', status: 'Available', patient: null, mrn: null },
+      { id: 'BED-203', roomNo: 'Bay 3', bedNo: 'Bed ED-03 (Cardiac)', status: 'Occupied', patient: 'Sophia Loren', mrn: 'MRN-551094' }
+    ]
+  },
+  { 
+    id: 'W-3', 
+    name: 'General Medical Inpatient Ward', 
+    department: 'Internal Medicine', 
+    floor: '2nd Floor - Wing B', 
+    tariff: 150,
+    ratePerDay: 150,
+    beds: [
+      { id: 'BED-301', roomNo: 'Room 201', bedNo: 'Bed 201-A', status: 'Available', patient: null, mrn: null },
+      { id: 'BED-302', roomNo: 'Room 201', bedNo: 'Bed 201-B', status: 'Occupied', patient: 'David Hemmings', mrn: 'MRN-774102' },
+      { id: 'BED-303', roomNo: 'Room 202', bedNo: 'Bed 202-A', status: 'Available', patient: null, mrn: null }
+    ]
+  },
+  { 
+    id: 'W-4', 
+    name: 'Pediatric Care Unit', 
+    department: 'Pediatrics', 
+    floor: '4th Floor - Wing C', 
+    tariff: 200,
+    ratePerDay: 200,
+    beds: [
+      { id: 'BED-401', roomNo: 'Room 401', bedNo: 'Bed 401-A', status: 'Available', patient: null, mrn: null }
+    ]
+  }
 ];
 
 export default function AdminMastersPage() {
   const [activeTab, setActiveTab] = useState('finance'); // 'finance' | 'infrastructure'
 
-  // Master States
+  // Master State synchronized with standard localStorage keys
   const [paymentMethods, setPaymentMethods] = useState(() => {
-    const saved = localStorage.getItem('nobicare_payment_methods');
+    const saved = localStorage.getItem('hospital_payment_methods');
     return saved ? JSON.parse(saved) : INITIAL_PAYMENT_METHODS;
   });
 
   const [paymentTypes, setPaymentTypes] = useState(() => {
-    const saved = localStorage.getItem('nobicare_payment_types');
+    const saved = localStorage.getItem('hospital_payment_types');
     return saved ? JSON.parse(saved) : INITIAL_PAYMENT_TYPES;
   });
 
-  const [wards, setWards] = useState(() => {
-    const saved = localStorage.getItem('nobicare_wards');
-    return saved ? JSON.parse(saved) : INITIAL_WARDS;
+  const [wardMaster, setWardMaster] = useState(() => {
+    const saved = localStorage.getItem('hospital_ward_master');
+    return saved ? JSON.parse(saved) : INITIAL_WARD_MASTER;
   });
 
-  const [beds, setBeds] = useState(() => {
-    const saved = localStorage.getItem('nobicare_beds');
-    return saved ? JSON.parse(saved) : INITIAL_BEDS;
-  });
-
-  // Sync to localStorage so other pages (Ledger, Triage) can consume them
+  // Keep localStorage continuously synchronized
   useEffect(() => {
-    localStorage.setItem('nobicare_payment_methods', JSON.stringify(paymentMethods));
+    localStorage.setItem('hospital_payment_methods', JSON.stringify(paymentMethods));
   }, [paymentMethods]);
 
   useEffect(() => {
-    localStorage.setItem('nobicare_payment_types', JSON.stringify(paymentTypes));
+    localStorage.setItem('hospital_payment_types', JSON.stringify(paymentTypes));
   }, [paymentTypes]);
 
   useEffect(() => {
-    localStorage.setItem('nobicare_wards', JSON.stringify(wards));
-  }, [wards]);
+    localStorage.setItem('hospital_ward_master', JSON.stringify(wardMaster));
+  }, [wardMaster]);
 
-  useEffect(() => {
-    localStorage.setItem('nobicare_beds', JSON.stringify(beds));
-  }, [beds]);
-
-  // Modal States
+  // Modal State
   const [modalType, setModalType] = useState(null); // 'add_method' | 'add_type' | 'add_ward' | 'add_bed'
 
   // Form Fields
   const [methodName, setMethodName] = useState('');
   const [methodCode, setMethodCode] = useState('');
 
-  const [typeMethodId, setTypeMethodId] = useState(paymentMethods[0]?.id || 'PM-1');
+  const [typeMethodId, setTypeMethodId] = useState('');
   const [typeName, setTypeName] = useState('');
   const [typeAccountNo, setTypeAccountNo] = useState('');
 
@@ -114,7 +140,7 @@ export default function AdminMastersPage() {
   const [wardFloor, setWardFloor] = useState('');
   const [wardRate, setWardRate] = useState('');
 
-  const [bedWardId, setBedWardId] = useState(wards[0]?.id || 'W-1');
+  const [bedWardId, setBedWardId] = useState('');
   const [bedRoomNo, setBedRoomNo] = useState('');
   const [bedNo, setBedNo] = useState('');
 
@@ -131,64 +157,123 @@ export default function AdminMastersPage() {
   const incomeChartInstance = useRef(null);
   const expenseChartInstance = useRef(null);
 
-  // Initialize Custom Financial Master Breakdown Charts
+  // Read transactions from Ledger to dynamically power Finance Tab Charts
   useEffect(() => {
     if (activeTab !== 'finance') return;
 
+    const rawTransactions = localStorage.getItem('hospital_ledger_transactions');
+    const transactions = rawTransactions ? JSON.parse(rawTransactions) : [];
+
+    // Aggregate Income by Payment Account
+    const incomeByAccount = {};
+    const expenseByAccount = {};
+
+    paymentTypes.forEach((pt) => {
+      incomeByAccount[pt.name] = 0;
+      expenseByAccount[pt.name] = 0;
+    });
+
+    transactions.forEach((t) => {
+      const accName = t.accountName || 'General Operating';
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') {
+        incomeByAccount[accName] = (incomeByAccount[accName] || 0) + amt;
+      } else {
+        expenseByAccount[accName] = (expenseByAccount[accName] || 0) + amt;
+      }
+    });
+
+    // Provide sensible defaults if ledger transactions are fresh
+    const allIncomeKeys = Object.keys(incomeByAccount);
+    const incomeLabels = allIncomeKeys.length > 0 ? allIncomeKeys : ['Axis Bank CC', 'HDFC Visa', 'HDFC Operating', 'SBI Treasury', 'Stripe'];
+    const incomeData = incomeLabels.map(lbl => (incomeByAccount[lbl] && incomeByAccount[lbl] > 0) ? incomeByAccount[lbl] : Math.floor(Math.random() * 8000 + 3000));
+
+    const allExpenseKeys = Object.keys(expenseByAccount);
+    const expenseLabels = allExpenseKeys.length > 0 ? allExpenseKeys : ['HDFC Operating A/C', 'SBI Medical Treasury', 'Stripe Gateway', 'Direct Cash'];
+    const expenseData = expenseLabels.map(lbl => (expenseByAccount[lbl] && expenseByAccount[lbl] > 0) ? expenseByAccount[lbl] : Math.floor(Math.random() * 6000 + 2000));
+
+    // 1. Horizontal Bar Chart (Cannot Collapse even with 20+ accounts!)
     if (incomeChartRef.current) {
       if (incomeChartInstance.current) incomeChartInstance.current.destroy();
       const ctx = incomeChartRef.current.getContext('2d');
       incomeChartInstance.current = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Axis Bank CC', 'HDFC Visa', 'Stripe Online', 'UPI Gateway', 'Cash Desk'],
-          datasets: [
-            {
-              label: 'Income Received ($ USD)',
-              data: [14200, 9800, 18450, 12300, 4800],
-              backgroundColor: '#10b981',
-              borderRadius: 8
-            }
-          ]
+          labels: incomeLabels,
+          datasets: [{
+            label: 'Collections ($ USD)',
+            data: incomeData,
+            backgroundColor: '#10b981',
+            borderRadius: 6,
+            maxBarThickness: 16
+          }]
         },
         options: {
+          indexAxis: 'y', // <--- Horizontal layout solves label collapse!
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => ` Total: $${Number(context.parsed.x).toLocaleString()}`
+              }
+            }
           },
           scales: {
-            x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10, weight: 'bold' } } },
-            y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10 } } }
+            x: { 
+              grid: { color: '#f1f5f9' }, 
+              ticks: { 
+                font: { family: 'Plus Jakarta Sans', size: 10 },
+                callback: (val) => `$${val >= 1000 ? `${val / 1000}k` : val}`
+              } 
+            },
+            y: { 
+              grid: { display: false }, 
+              ticks: { 
+                font: { family: 'Plus Jakarta Sans', size: 10, weight: '600' },
+                color: '#334155'
+              } 
+            }
           }
         }
       });
     }
 
+    // 2. Balanced Doughnut Chart with Right-Aligned Legend
     if (expenseChartRef.current) {
       if (expenseChartInstance.current) expenseChartInstance.current.destroy();
       const ctx = expenseChartRef.current.getContext('2d');
       expenseChartInstance.current = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['HDFC Hospital A/C', 'SBI Medical Treasury', 'Stripe Vendor Fees', 'Direct Cash'],
-          datasets: [
-            {
-              data: [18500, 12400, 3200, 1800],
-              backgroundColor: ['#dc2626', '#f59e0b', '#2563eb', '#64748b'],
-              borderWidth: 0,
-              hoverOffset: 6
-            }
-          ]
+          labels: expenseLabels,
+          datasets: [{
+            data: expenseData,
+            backgroundColor: ['#dc2626', '#f59e0b', '#2563eb', '#10b981', '#64748b', '#8b5cf6'],
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '70%',
+          cutout: '68%',
           plugins: {
             legend: {
-              position: 'bottom',
-              labels: { font: { family: 'Plus Jakarta Sans', size: 10, weight: '600' }, usePointStyle: true, pointStyle: 'circle' }
+              position: 'right', // <--- Right alignment prevents doughnut compression!
+              labels: { 
+                font: { family: 'Plus Jakarta Sans', size: 10, weight: '600' }, 
+                usePointStyle: true, 
+                pointStyle: 'circle',
+                boxWidth: 8,
+                padding: 10
+              } 
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => ` ${context.label}: $${Number(context.parsed).toLocaleString()}`
+              }
             }
           }
         }
@@ -199,9 +284,9 @@ export default function AdminMastersPage() {
       if (incomeChartInstance.current) incomeChartInstance.current.destroy();
       if (expenseChartInstance.current) expenseChartInstance.current.destroy();
     };
-  }, [activeTab]);
+  }, [activeTab, paymentTypes]);
 
-  // Handlers for Add
+  // Master Actions: Methods & Accounts
   const handleAddPaymentMethod = (e) => {
     e.preventDefault();
     if (!methodName.trim() || !methodCode.trim()) return;
@@ -211,71 +296,98 @@ export default function AdminMastersPage() {
       code: methodCode.toUpperCase().trim(),
       active: true
     };
-    setPaymentMethods((prev) => [...prev, newMethod]);
+    setPaymentMethods(prev => [...prev, newMethod]);
     setModalType(null);
     setMethodName('');
     setMethodCode('');
-    showToast(`Payment Method "${newMethod.name}" added to master!`);
+    showToast(`Payment Method "${newMethod.name}" registered in master!`);
   };
 
   const handleAddPaymentType = (e) => {
     e.preventDefault();
     if (!typeName.trim() || !typeAccountNo.trim()) return;
+    const selectedMethodId = typeMethodId || paymentMethods[0]?.id;
     const newType = {
       id: `PT-${Date.now().toString().slice(-4)}`,
-      methodId: typeMethodId,
+      methodId: selectedMethodId,
       name: typeName.trim(),
       accountNo: typeAccountNo.trim(),
       active: true
     };
-    setPaymentTypes((prev) => [...prev, newType]);
+    setPaymentTypes(prev => [...prev, newType]);
     setModalType(null);
     setTypeName('');
     setTypeAccountNo('');
-    showToast(`Payment Account "${newType.name}" added successfully!`);
+    showToast(`Payment Account "${newType.name}" added to Ledger master!`);
   };
 
+  // Master Actions: Wards & Beds
   const handleAddWard = (e) => {
     e.preventDefault();
     if (!wardName.trim() || !wardDept.trim()) return;
+    const rate = parseFloat(wardRate) || 150;
     const newWard = {
       id: `W-${Date.now().toString().slice(-4)}`,
       name: wardName.trim(),
       department: wardDept.trim(),
       floor: wardFloor.trim() || 'Floor 1',
-      ratePerDay: parseFloat(wardRate) || 150
+      tariff: rate,
+      ratePerDay: rate,
+      beds: []
     };
-    setWards((prev) => [...prev, newWard]);
+    setWardMaster(prev => [...prev, newWard]);
     setModalType(null);
     setWardName('');
     setWardDept('');
     setWardFloor('');
     setWardRate('');
-    showToast(`Ward "${newWard.name}" created in hospital master!`);
+    showToast(`Hospital Ward "${newWard.name}" created at $${rate}/day!`);
   };
 
   const handleAddBed = (e) => {
     e.preventDefault();
     if (!bedNo.trim() || !bedRoomNo.trim()) return;
+    const targetWardId = bedWardId || wardMaster[0]?.id;
     const newBed = {
       id: `BED-${Date.now().toString().slice(-4)}`,
-      wardId: bedWardId,
       roomNo: bedRoomNo.trim(),
       bedNo: bedNo.trim(),
       status: 'Available',
-      patientName: null,
+      patient: null,
       mrn: null
     };
-    setBeds((prev) => [...prev, newBed]);
+
+    setWardMaster(prev => prev.map(ward => {
+      if (ward.id === targetWardId) {
+        return {
+          ...ward,
+          beds: [...(ward.beds || []), newBed]
+        };
+      }
+      return ward;
+    }));
+
     setModalType(null);
     setBedRoomNo('');
     setBedNo('');
     showToast(`Bed "${newBed.bedNo}" added to ward inventory!`);
   };
 
-  // Calculations for Bed Master
-  const totalBeds = beds.length;
-  const occupiedBeds = beds.filter((b) => b.status === 'Occupied').length;
+  // Delete Bed Bay
+  const handleDeleteBed = (wardId, bedId, bedNoText) => {
+    setWardMaster(prev => prev.map(w => {
+      if (w.id === wardId) {
+        return { ...w, beds: (w.beds || []).filter(b => b.id !== bedId) };
+      }
+      return w;
+    }));
+    showToast(`Bed ${bedNoText} decommissioned.`);
+  };
+
+  // Infrastructure Calculations
+  const flattenedBeds = wardMaster.flatMap(w => (w.beds || []).map(b => ({ ...b, wardId: w.id, wardName: w.name })));
+  const totalBeds = flattenedBeds.length;
+  const occupiedBeds = flattenedBeds.filter(b => b.status === 'Occupied').length;
   const availableBeds = totalBeds - occupiedBeds;
   const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
@@ -295,13 +407,13 @@ export default function AdminMastersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="text-xs font-bold text-red-600 uppercase tracking-wider block mb-1">
-            Core Configuration Center
+            System Configuration Matrix
           </span>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Hospital System Master Modules
+            Hospital Masters & Bed Inventory
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Configure financial payment channels, accounts, inpatient ward structure, and hospital bed capacity.
+            Manage financial ledger settlement channels, department structures, and inpatient room tariffs.
           </p>
         </div>
 
@@ -332,55 +444,50 @@ export default function AdminMastersPage() {
         </div>
       </div>
 
-      {/* ========================================================
-          MASTER MODULE I: FINANCIAL CHANNELS & ACCOUNTS
-         ======================================================== */}
+      {/* ==================== MODULE I: FINANCIAL MASTER ==================== */}
       {activeTab === 'finance' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Custom Income & Expense by Payment Channel Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+            {/* Horizontal Bar Chart (Resilient to any number of accounts) */}
+            <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-emerald-600" />
                     Income Distribution by Payment Channel
                   </h3>
-                  <p className="text-xs text-slate-400">Total clinical collections across active credit cards & gateways</p>
+                  <p className="text-xs text-slate-400">Total ledger receipts distributed across active channels</p>
                 </div>
-                <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-                  +$59,550 Total
-                </span>
               </div>
-              <div className="h-56 relative">
+              <div className="h-64 relative w-full">
                 <canvas ref={incomeChartRef}></canvas>
               </div>
             </div>
 
-            <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+            {/* Doughnut Chart with Right Legend (Never squashes into an oval) */}
+            <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <TrendingDown className="w-4 h-4 text-red-600" />
                     Operational Expense Outflow
                   </h3>
-                  <p className="text-xs text-slate-400">Bank accounts debited for supplies & payroll</p>
+                  <p className="text-xs text-slate-400">Settlement accounts debited for supplies & payroll</p>
                 </div>
               </div>
-              <div className="h-56 relative flex items-center justify-center">
+              <div className="h-64 relative flex items-center justify-center w-full">
                 <canvas ref={expenseChartRef}></canvas>
               </div>
             </div>
           </div>
 
-          {/* Financial Master Management Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 1. Payment Methods */}
+            {/* Payment Methods Master */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900">1. Payment Methods Master</h3>
-                  <p className="text-xs text-slate-400">Core payment classifications</p>
+                  <p className="text-xs text-slate-400">Classifications for patient invoices & billing desk</p>
                 </div>
                 <button
                   onClick={() => setModalType('add_method')}
@@ -395,8 +502,8 @@ export default function AdminMastersPage() {
                 <table className="w-full text-left text-xs text-slate-700">
                   <thead className="bg-slate-50 text-slate-900 font-bold uppercase text-[10px]">
                     <tr>
-                      <th className="p-3.5 pl-5">Method Code</th>
-                      <th className="p-3.5">Method Name</th>
+                      <th className="p-3.5 pl-5">Code</th>
+                      <th className="p-3.5">Method Classification</th>
                       <th className="p-3.5">Status</th>
                       <th className="p-3.5 text-right pr-5">Action</th>
                     </tr>
@@ -414,10 +521,10 @@ export default function AdminMastersPage() {
                         <td className="p-3.5 text-right pr-5">
                           <button
                             onClick={() => {
-                              setPaymentMethods((prev) => prev.filter((m) => m.id !== pm.id));
+                              setPaymentMethods(prev => prev.filter(m => m.id !== pm.id));
                               showToast(`Removed method ${pm.name}`);
                             }}
-                            className="text-slate-400 hover:text-red-600 transition p-1"
+                            className="text-slate-400 hover:text-red-600 transition p-1 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -429,15 +536,18 @@ export default function AdminMastersPage() {
               </div>
             </div>
 
-            {/* 2. Payment Types / Sub-accounts */}
+            {/* Payment Types / Sub-accounts */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">2. Payment Types & Accounts</h3>
-                  <p className="text-xs text-slate-400">Specific bank accounts & merchant terminals</p>
+                  <h3 className="text-base font-extrabold text-slate-900">2. Ledger Accounts & Terminals</h3>
+                  <p className="text-xs text-slate-400">Available accounts linked to Ledger Entries</p>
                 </div>
                 <button
-                  onClick={() => setModalType('add_type')}
+                  onClick={() => {
+                    setTypeMethodId(paymentMethods[0]?.id || '');
+                    setModalType('add_type');
+                  }}
                   className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -451,29 +561,29 @@ export default function AdminMastersPage() {
                     <tr>
                       <th className="p-3.5 pl-5">Account / Terminal Name</th>
                       <th className="p-3.5">Method</th>
-                      <th className="p-3.5">Identifier / A/C No</th>
+                      <th className="p-3.5">Account / Terminal ID</th>
                       <th className="p-3.5 text-right pr-5">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
                     {paymentTypes.map((pt) => {
-                      const parentMethod = paymentMethods.find((m) => m.id === pt.methodId);
+                      const parentMethod = paymentMethods.find(m => m.id === pt.methodId);
                       return (
                         <tr key={pt.id} className="hover:bg-slate-50 transition">
                           <td className="p-3.5 pl-5 font-bold text-slate-900">{pt.name}</td>
                           <td className="p-3.5">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              {parentMethod ? parentMethod.code : 'OTHER'}
+                              {parentMethod ? parentMethod.code : 'GATEWAY'}
                             </span>
                           </td>
                           <td className="p-3.5 text-slate-500 font-mono text-[11px]">{pt.accountNo}</td>
                           <td className="p-3.5 text-right pr-5">
                             <button
                               onClick={() => {
-                                setPaymentTypes((prev) => prev.filter((t) => t.id !== pt.id));
+                                setPaymentTypes(prev => prev.filter(t => t.id !== pt.id));
                                 showToast(`Removed account ${pt.name}`);
                               }}
-                              className="text-slate-400 hover:text-red-600 transition p-1"
+                              className="text-slate-400 hover:text-red-600 transition p-1 cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -489,18 +599,16 @@ export default function AdminMastersPage() {
         </div>
       )}
 
-      {/* ========================================================
-          MASTER MODULE II: WARD, ROOM & BED INFRASTRUCTURE
-         ======================================================== */}
+      {/* ==================== MODULE II: WARD & BED MASTER ==================== */}
       {activeTab === 'infrastructure' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Ward & Bed KPI Row */}
+          {/* KPI Matrix */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold text-slate-400 uppercase">Hospital Wards</span>
-                <div className="text-3xl font-black text-slate-900 mt-1">{wards.length} Units</div>
-                <span className="text-[11px] text-slate-500 font-semibold mt-1 block">Configured Departments</span>
+                <div className="text-3xl font-black text-slate-900 mt-1">{wardMaster.length} Units</div>
+                <span className="text-[11px] text-slate-500 font-semibold mt-1 block">Active Clinical Wings</span>
               </div>
               <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center font-bold">
                 <Building2 className="w-6 h-6" />
@@ -522,7 +630,7 @@ export default function AdminMastersPage() {
               <div>
                 <span className="text-[11px] font-bold text-slate-400 uppercase">Current Inpatients</span>
                 <div className="text-3xl font-black text-red-600 mt-1">{occupiedBeds} Occupied</div>
-                <span className="text-[11px] text-red-600 font-bold mt-1 block">Active Admitted Cases</span>
+                <span className="text-[11px] text-red-600 font-bold mt-1 block">Triage Assigned Beds</span>
               </div>
               <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-bold">
                 <Layers className="w-6 h-6" />
@@ -541,14 +649,13 @@ export default function AdminMastersPage() {
             </div>
           </div>
 
-          {/* Wards & Beds Directory */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Wards List (5 Cols) */}
+            {/* Wards Master with Tariff */}
             <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900">Hospital Wards Master</h3>
-                  <p className="text-xs text-slate-400">Wings, departments & tariff</p>
+                  <p className="text-xs text-slate-400">Department tariffs tied directly to Ledger billing</p>
                 </div>
                 <button
                   onClick={() => setModalType('add_ward')}
@@ -560,19 +667,20 @@ export default function AdminMastersPage() {
               </div>
 
               <div className="p-4 space-y-3 flex-1 overflow-y-auto">
-                {wards.map((w) => {
-                  const wardBeds = beds.filter((b) => b.wardId === w.id);
-                  const wardOccupied = wardBeds.filter((b) => b.status === 'Occupied').length;
-
+                {wardMaster.map((w) => {
+                  const bCount = (w.beds || []).length;
+                  const occCount = (w.beds || []).filter(b => b.status === 'Occupied').length;
                   return (
                     <div key={w.id} className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition">
                       <div className="flex items-center justify-between">
                         <span className="font-extrabold text-xs text-slate-900">{w.name}</span>
-                        <span className="text-[11px] font-bold text-slate-500 font-mono">${w.ratePerDay}/day</span>
+                        <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                          ${w.tariff || w.ratePerDay}/day
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
                         <span>{w.department} • {w.floor}</span>
-                        <span className="font-bold text-slate-700">{wardOccupied}/{wardBeds.length} Beds Occupied</span>
+                        <span className="font-bold text-slate-700">{occCount}/{bCount} Beds Occupied</span>
                       </div>
                     </div>
                   );
@@ -580,15 +688,18 @@ export default function AdminMastersPage() {
               </div>
             </div>
 
-            {/* Beds Live Matrix (7 Cols) */}
+            {/* Live Beds Matrix */}
             <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900">Room & Bed Master Matrix</h3>
-                  <p className="text-xs text-slate-400">Live bed assignments connected to Doctor Triage</p>
+                  <p className="text-xs text-slate-400">Live bed assignments connected with Doctor Triage</p>
                 </div>
                 <button
-                  onClick={() => setModalType('add_bed')}
+                  onClick={() => {
+                    setBedWardId(wardMaster[0]?.id || '');
+                    setModalType('add_bed');
+                  }}
                   className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -608,52 +719,42 @@ export default function AdminMastersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {beds.map((b) => {
-                      const ward = wards.find((w) => w.id === b.wardId);
-                      return (
-                        <tr key={b.id} className="hover:bg-slate-50 transition">
-                          <td className="p-3.5 pl-5">
-                            <div className="font-bold text-slate-900">{b.bedNo}</div>
-                            <div className="text-[10px] text-slate-400">{b.roomNo}</div>
-                          </td>
-                          <td className="p-3.5">
-                            <span className="text-[11px] font-semibold text-slate-700">{ward?.name || 'General'}</span>
-                          </td>
-                          <td className="p-3.5">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                b.status === 'Occupied'
-                                  ? 'bg-red-50 text-red-700 border border-red-200'
-                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              }`}
-                            >
-                              {b.status}
-                            </span>
-                          </td>
-                          <td className="p-3.5">
-                            {b.patientName ? (
-                              <div>
-                                <div className="font-bold text-slate-800">{b.patientName}</div>
-                                <div className="text-[10px] text-slate-400 font-mono">{b.mrn}</div>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 italic">Empty Bay</span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-right pr-5">
-                            <button
-                              onClick={() => {
-                                setBeds((prev) => prev.filter((item) => item.id !== b.id));
-                                showToast(`Bed ${b.bedNo} removed from master inventory`);
-                              }}
-                              className="text-slate-400 hover:text-red-600 transition p-1"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {flattenedBeds.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3.5 pl-5">
+                          <div className="font-bold text-slate-900">{b.bedNo}</div>
+                          <div className="text-[10px] text-slate-400">{b.roomNo}</div>
+                        </td>
+                        <td className="p-3.5 font-semibold text-slate-700">{b.wardName}</td>
+                        <td className="p-3.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            b.status === 'Occupied'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          }`}>
+                            {b.status}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          {b.patient || b.patientName ? (
+                            <div>
+                              <div className="font-bold text-slate-800">{b.patient || b.patientName}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{b.mrn || 'ER Admission'}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Empty Bay</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-right pr-5">
+                          <button
+                            onClick={() => handleDeleteBed(b.wardId, b.id, b.bedNo)}
+                            className="text-slate-400 hover:text-red-600 transition p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -662,9 +763,7 @@ export default function AdminMastersPage() {
         </div>
       )}
 
-      {/* ========================================================
-          MODALS FOR ALL 4 SUB-MASTERS
-         ======================================================== */}
+      {/* ==================== MODALS ==================== */}
       {modalType && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-7 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
@@ -675,9 +774,9 @@ export default function AdminMastersPage() {
                 </span>
                 <h3 className="text-lg font-black text-slate-900">
                   {modalType === 'add_method' && 'Add Payment Method'}
-                  {modalType === 'add_type' && 'Add Bank / Payment Account'}
-                  {modalType === 'add_ward' && 'Create Hospital Ward'}
-                  {modalType === 'add_bed' && 'Register New Bed Bay'}
+                  {modalType === 'add_type' && 'Add Ledger Account / Terminal'}
+                  {modalType === 'add_ward' && 'Create Hospital Ward & Tariff'}
+                  {modalType === 'add_bed' && 'Register Bed Bay to Matrix'}
                 </h3>
               </div>
               <button
@@ -688,18 +787,18 @@ export default function AdminMastersPage() {
               </button>
             </div>
 
-            {/* Form 1: Add Payment Method */}
+            {/* Modal: Add Payment Method */}
             {modalType === 'add_method' && (
               <form onSubmit={handleAddPaymentMethod} className="space-y-4 text-xs">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Payment Method Name</label>
+                  <label className="font-bold text-slate-700 block mb-1">Method Name</label>
                   <input
                     type="text"
                     required
                     value={methodName}
                     onChange={(e) => setMethodName(e.target.value)}
-                    placeholder="e.g., Credit Card or Digital UPI"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 transition font-semibold"
+                    placeholder="e.g., Insurance TPA Direct Settlement"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 font-semibold"
                   />
                 </div>
                 <div>
@@ -709,21 +808,21 @@ export default function AdminMastersPage() {
                     required
                     value={methodCode}
                     onChange={(e) => setMethodCode(e.target.value)}
-                    placeholder="e.g., CC, UPI, BANK"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 transition font-semibold uppercase"
+                    placeholder="e.g., TPA, CASH, UPI"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 font-semibold uppercase"
                   />
                 </div>
                 <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
                   >
                     Save Method
                   </button>
@@ -731,20 +830,18 @@ export default function AdminMastersPage() {
               </form>
             )}
 
-            {/* Form 2: Add Payment Type */}
+            {/* Modal: Add Payment Account */}
             {modalType === 'add_type' && (
               <form onSubmit={handleAddPaymentType} className="space-y-4 text-xs">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Parent Payment Method</label>
+                  <label className="font-bold text-slate-700 block mb-1">Parent Method</label>
                   <select
                     value={typeMethodId}
                     onChange={(e) => setTypeMethodId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold focus:outline-none focus:border-red-600 transition"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold focus:outline-none focus:border-red-600"
                   >
                     {paymentMethods.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.code})
-                      </option>
+                      <option key={m.id} value={m.id}>{m.name} ({m.code})</option>
                     ))}
                   </select>
                 </div>
@@ -755,32 +852,32 @@ export default function AdminMastersPage() {
                     required
                     value={typeName}
                     onChange={(e) => setTypeName(e.target.value)}
-                    placeholder="e.g., Axis Bank Credit Card Terminal"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 transition font-semibold"
+                    placeholder="e.g., Emergency Cash Desk Drawer 2"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Account Number / Terminal ID</label>
+                  <label className="font-bold text-slate-700 block mb-1">Account No / Terminal ID</label>
                   <input
                     type="text"
                     required
                     value={typeAccountNo}
                     onChange={(e) => setTypeAccountNo(e.target.value)}
-                    placeholder="e.g., AC-50200019284 or POS-09"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 transition font-mono"
+                    placeholder="e.g., AC-99102481 or POS-04"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-mono"
                   />
                 </div>
                 <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-md transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold cursor-pointer"
                   >
                     Save Account
                   </button>
@@ -788,7 +885,7 @@ export default function AdminMastersPage() {
               </form>
             )}
 
-            {/* Form 3: Add Ward */}
+            {/* Modal: Add Ward */}
             {modalType === 'add_ward' && (
               <form onSubmit={handleAddWard} className="space-y-4 text-xs">
                 <div>
@@ -798,8 +895,8 @@ export default function AdminMastersPage() {
                     required
                     value={wardName}
                     onChange={(e) => setWardName(e.target.value)}
-                    placeholder="e.g., Cardiology ICU or Maternity Wing"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-600 transition font-semibold"
+                    placeholder="e.g., Neurology High Dependency Unit"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-semibold"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -810,8 +907,8 @@ export default function AdminMastersPage() {
                       required
                       value={wardDept}
                       onChange={(e) => setWardDept(e.target.value)}
-                      placeholder="e.g., Cardiology"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-red-600 transition"
+                      placeholder="e.g., Neurology"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50"
                     />
                   </div>
                   <div>
@@ -821,8 +918,8 @@ export default function AdminMastersPage() {
                       required
                       value={wardFloor}
                       onChange={(e) => setWardFloor(e.target.value)}
-                      placeholder="e.g., 3rd Floor"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-red-600 transition"
+                      placeholder="e.g., 5th Floor"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50"
                     />
                   </div>
                 </div>
@@ -833,21 +930,21 @@ export default function AdminMastersPage() {
                     required
                     value={wardRate}
                     onChange={(e) => setWardRate(e.target.value)}
-                    placeholder="e.g., 250"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-red-600 transition font-bold"
+                    placeholder="e.g., 350"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold"
                   />
                 </div>
                 <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20 transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
                   >
                     Create Ward
                   </button>
@@ -855,7 +952,7 @@ export default function AdminMastersPage() {
               </form>
             )}
 
-            {/* Form 4: Add Bed */}
+            {/* Modal: Add Bed */}
             {modalType === 'add_bed' && (
               <form onSubmit={handleAddBed} className="space-y-4 text-xs">
                 <div>
@@ -863,12 +960,10 @@ export default function AdminMastersPage() {
                   <select
                     value={bedWardId}
                     onChange={(e) => setBedWardId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold focus:outline-none focus:border-red-600 transition"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold"
                   >
-                    {wards.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name} ({w.department})
-                      </option>
+                    {wardMaster.map((w) => (
+                      <option key={w.id} value={w.id}>{w.name} (${w.tariff || w.ratePerDay}/day)</option>
                     ))}
                   </select>
                 </div>
@@ -880,8 +975,8 @@ export default function AdminMastersPage() {
                       required
                       value={bedRoomNo}
                       onChange={(e) => setBedRoomNo(e.target.value)}
-                      placeholder="e.g., Room 301"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-red-600 transition"
+                      placeholder="e.g., Room 502"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50"
                     />
                   </div>
                   <div>
@@ -891,8 +986,8 @@ export default function AdminMastersPage() {
                       required
                       value={bedNo}
                       onChange={(e) => setBedNo(e.target.value)}
-                      placeholder="e.g., Bed 301-A"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-red-600 transition font-bold"
+                      placeholder="e.g., Bed 502-A"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold"
                     />
                   </div>
                 </div>
@@ -900,13 +995,13 @@ export default function AdminMastersPage() {
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-md transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold cursor-pointer"
                   >
                     Register Bed
                   </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Users, 
   UserCheck, 
@@ -20,10 +21,10 @@ import {
   Building,
   Stethoscope,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
-
 Chart.register(...registerables);
 
 // Fallback Ward Master Data
@@ -243,9 +244,24 @@ const INITIAL_RECOVERED_ARCHIVE = [
 ];
 
 export default function DoctorTriagePage() {
-  const [incomingQueue, setIncomingQueue] = useState(INITIAL_INCOMING_QUEUE);
-  const [myCaseload, setMyCaseload] = useState(INITIAL_MY_CASELOAD);
-  const [recoveredArchive, setRecoveredArchive] = useState(INITIAL_RECOVERED_ARCHIVE);
+  const { user } = useAuth();
+  const doctorName = user?.name || user?.full_name || 'Dr. Sarah Jenkins, MD';
+
+  // State with LocalStorage fallbacks
+  const [incomingQueue, setIncomingQueue] = useState(() => {
+    const saved = localStorage.getItem('hospital_triage_queue');
+    return saved ? JSON.parse(saved) : INITIAL_INCOMING_QUEUE;
+  });
+
+  const [myCaseload, setMyCaseload] = useState(() => {
+    const saved = localStorage.getItem('hospital_my_caseload');
+    return saved ? JSON.parse(saved) : INITIAL_MY_CASELOAD;
+  });
+
+  const [recoveredArchive, setRecoveredArchive] = useState(() => {
+    const saved = localStorage.getItem('hospital_recovered_archive');
+    return saved ? JSON.parse(saved) : INITIAL_RECOVERED_ARCHIVE;
+  });
 
   // Ward Master State (synced with Admin Master)
   const [wards, setWards] = useState(() => {
@@ -263,7 +279,6 @@ export default function DoctorTriagePage() {
   const [carePathway, setCarePathway] = useState('Inpatient'); // 'Inpatient' | 'Outpatient'
   const [selectedWardId, setSelectedWardId] = useState('');
   const [selectedBedName, setSelectedBedName] = useState('');
-  const [clinicalNotes, setClinicalNotes] = useState('');
 
   // Prescription Authoring in Modal
   const [prescriptionsDraft, setPrescriptionsDraft] = useState([]);
@@ -292,7 +307,20 @@ export default function DoctorTriagePage() {
     }, 3200);
   };
 
-  // Sync Ward Master from LocalStorage whenever page gains focus
+  // Sync to LocalStorage whenever Queues change
+  useEffect(() => {
+    localStorage.setItem('hospital_triage_queue', JSON.stringify(incomingQueue));
+  }, [incomingQueue]);
+
+  useEffect(() => {
+    localStorage.setItem('hospital_my_caseload', JSON.stringify(myCaseload));
+  }, [myCaseload]);
+
+  useEffect(() => {
+    localStorage.setItem('hospital_recovered_archive', JSON.stringify(recoveredArchive));
+  }, [recoveredArchive]);
+
+  // Sync Ward Master from LocalStorage
   useEffect(() => {
     const handleStorage = () => {
       const saved = localStorage.getItem('hospital_ward_master');
@@ -302,7 +330,6 @@ export default function DoctorTriagePage() {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // Update localStorage helper
   const updateWardMasterStorage = (newWards) => {
     setWards(newWards);
     localStorage.setItem('hospital_ward_master', JSON.stringify(newWards));
@@ -319,7 +346,6 @@ export default function DoctorTriagePage() {
   // Chart Management
   useEffect(() => {
     if (!chartRef.current) return;
-
     const high = incomingQueue.filter((p) => p.risk === 'HIGH').length;
     const med = incomingQueue.filter((p) => p.risk === 'MEDIUM').length;
     const low = incomingQueue.filter((p) => p.risk === 'LOW').length;
@@ -373,11 +399,9 @@ export default function DoctorTriagePage() {
   const handleOpenReview = (patient) => {
     setSelectedPatient(patient);
     setCarePathway('Inpatient');
-    setClinicalNotes('');
     setPrescriptionsDraft([]);
     setRxDrugName('');
 
-    // Pre-select first ward with available beds
     const availableWard = wards.find((w) => w.beds.some((b) => b.status === 'Available')) || wards[0];
     if (availableWard) {
       setSelectedWardId(availableWard.id);
@@ -420,6 +444,7 @@ export default function DoctorTriagePage() {
     const currentWard = wards.find((w) => w.id === selectedWardId);
     const wardName = currentWard ? currentWard.name : 'Emergency & Trauma Bay';
     const bedName = selectedBedName || 'ED-Bed Standing';
+    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // 1. If Inpatient, update Ward Master occupancy
     if (carePathway === 'Inpatient') {
@@ -445,28 +470,76 @@ export default function DoctorTriagePage() {
       ...rx,
       mrn: selectedPatient.mrn,
       patientName: selectedPatient.name,
-      prescribedBy: 'Dr. Sarah Jenkins (Cardiology/Emergency)',
+      prescribedBy: doctorName,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       takenToday: false,
     }));
     localStorage.setItem('hospital_prescriptions', JSON.stringify([...newGlobalRx, ...globalPrescriptions]));
 
-    // Record patient admission status in LocalStorage for Patient Overview Page
+    // Record patient admission status with full telemetry for Patient Overview
     const patientAdmissions = JSON.parse(localStorage.getItem('hospital_patient_admissions') || '{}');
     patientAdmissions[selectedPatient.mrn] = {
+      patientName: selectedPatient.name,
+      age: selectedPatient.age,
+      gender: selectedPatient.gender,
       careType: carePathway,
       ward: carePathway === 'Inpatient' ? wardName : 'Outpatient Ambulatory Clinic',
       bed: carePathway === 'Inpatient' ? bedName : 'N/A (Consultation Only)',
       status: carePathway === 'Inpatient' ? 'Admitted & Under Active Treatment' : 'Outpatient Prescribed & Discharged',
-      admittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      attendingPhysician: 'Dr. Sarah Jenkins',
-      diagnosis: selectedPatient.complaint
+      admittedAt: currentTimeStr,
+      attendingPhysician: doctorName,
+      diagnosis: selectedPatient.complaint,
+      vitals: selectedPatient.vitals
     };
     localStorage.setItem('hospital_patient_admissions', JSON.stringify(patientAdmissions));
 
-    // 3. Update queues
-    setIncomingQueue((prev) => prev.filter((p) => p.id !== selectedPatient.id));
+    // Also sync triage vitals to patient_vitals_log for live telemetry graph
+    if (selectedPatient.vitals) {
+      const bpParts = (selectedPatient.vitals.bp || '120/80').split('/');
+      localStorage.setItem('patient_vitals_log', JSON.stringify({
+        systolic: parseInt(bpParts[0]) || 120,
+        diastolic: parseInt(bpParts[1]) || 80,
+        heartRate: parseInt(selectedPatient.vitals.hr) || 75,
+        spo2: parseInt(selectedPatient.vitals.spo2) || 98,
+        bloodSugar: 105,
+        lastUpdated: currentTimeStr
+      }));
+    }
 
+    // 3. Auto-seed care messages thread for two-way chat
+    const careThreads = JSON.parse(localStorage.getItem('hospital_care_threads') || '[]');
+    const existingThreadIdx = careThreads.findIndex(t => t.patientMrn === selectedPatient.mrn);
+    if (existingThreadIdx >= 0) {
+      careThreads[existingThreadIdx].ward = wardName;
+      careThreads[existingThreadIdx].bed = bedName;
+      careThreads[existingThreadIdx].providerName = doctorName;
+    } else {
+      careThreads.push({
+        id: `thread-${selectedPatient.mrn}`,
+        patientMrn: selectedPatient.mrn,
+        patientName: selectedPatient.name,
+        patientAge: selectedPatient.age,
+        patientGender: selectedPatient.gender,
+        ward: wardName,
+        bed: bedName,
+        providerName: doctorName,
+        providerRole: 'Attending Physician',
+        unread: 0,
+        messages: [
+          {
+            id: Date.now(),
+            sender: doctorName,
+            senderRole: 'doctor',
+            text: `Admission intake completed. Assigned to ${wardName} (${bedName}). Continuous telemetry monitoring activated.`,
+            time: currentTimeStr
+          }
+        ]
+      });
+    }
+    localStorage.setItem('hospital_care_threads', JSON.stringify(careThreads));
+
+    // 4. Update queues
+    setIncomingQueue((prev) => prev.filter((p) => p.id !== selectedPatient.id));
     if (carePathway === 'Inpatient') {
       setMyCaseload((prev) => [
         {
@@ -484,7 +557,6 @@ export default function DoctorTriagePage() {
       showToast(`${selectedPatient.name} admitted to ${wardName} (${bedName})`);
       setTimeout(() => setActiveTab('caseload'), 300);
     } else {
-      // Outpatient: Add directly to Recovered/Discharged archive
       setRecoveredArchive((prev) => [
         {
           id: selectedPatient.id,
@@ -492,7 +564,7 @@ export default function DoctorTriagePage() {
           name: selectedPatient.name,
           diagnosis: selectedPatient.complaint,
           careType: 'Outpatient Consultation',
-          dischargeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          dischargeTime: currentTimeStr,
           outcome: 'Outpatient Consultation Completed - Prescriptions Issued',
         },
         ...prev,
@@ -507,7 +579,6 @@ export default function DoctorTriagePage() {
   // Handle Mark Recovered & Free Bed
   const handleConfirmDischarge = () => {
     if (!dischargeTarget) return;
-
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Free bed in Ward Master if patient was Inpatient
@@ -562,7 +633,6 @@ export default function DoctorTriagePage() {
   const medRiskCount = incomingQueue.filter((p) => p.risk === 'MEDIUM').length;
   const lowRiskCount = incomingQueue.filter((p) => p.risk === 'LOW').length;
   const totalInQueue = highRiskCount + medRiskCount + lowRiskCount || 1;
-
   const pctHigh = Math.round((highRiskCount / totalInQueue) * 100);
   const pctMed = Math.round((medRiskCount / totalInQueue) * 100);
   const pctLow = Math.round((lowRiskCount / totalInQueue) * 100);
@@ -584,7 +654,8 @@ export default function DoctorTriagePage() {
     return (
       p.name.toLowerCase().includes(query) ||
       p.mrn.toLowerCase().includes(query) ||
-      (p.bed && p.bed.toLowerCase().includes(query))
+      (p.bed && p.bed.toLowerCase().includes(query)) ||
+      (p.wardName && p.wardName.toLowerCase().includes(query))
     );
   });
 
@@ -605,6 +676,7 @@ export default function DoctorTriagePage() {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto p-8 custom-scrollbar bg-slate-50 font-['Plus_Jakarta_Sans',sans-serif]">
+      
       {/* Toast Notification Container */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 pointer-events-none animate-bounce">
@@ -625,9 +697,10 @@ export default function DoctorTriagePage() {
             Emergency Triage & Active Clinical Caseload
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time acuity prioritization, live Master Bed assignment, outpatient consultation & prescription authoring.
+            Attending Physician: <strong className="text-slate-800">{doctorName}</strong> • Live Master Bed assignment & E-Prescription authoring.
           </p>
         </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={refreshTriageData}
@@ -644,7 +717,6 @@ export default function DoctorTriagePage() {
 
       {/* KPI STAT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-        {/* KPI 1: In Triage Queue */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Incoming Queue</span>
@@ -659,7 +731,6 @@ export default function DoctorTriagePage() {
           <p className="text-xs text-slate-400 mt-2">Awaiting physician assignment</p>
         </div>
 
-        {/* KPI 2: My Assigned Caseload */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm ring-2 ring-red-500/20">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-red-600">My Active Caseload</span>
@@ -674,7 +745,6 @@ export default function DoctorTriagePage() {
           <p className="text-xs text-slate-500 mt-2">Occupying Live Master Beds</p>
         </div>
 
-        {/* KPI 3: High Risk (ESI 1-2) */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">High Risk (ESI 1-2)</span>
@@ -689,7 +759,6 @@ export default function DoctorTriagePage() {
           <p className="text-xs text-slate-400 mt-2">Critical telemetry monitoring</p>
         </div>
 
-        {/* KPI 4: Recovered & Discharged */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Resolved Today</span>
@@ -707,64 +776,80 @@ export default function DoctorTriagePage() {
 
       {/* MAIN WORKSPACE GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         {/* TRIAGE & CASELOAD TABLES (SPAN 2) */}
         <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden">
-          {/* Main View Tabs Header */}
-          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
-              <button
-                onClick={() => setActiveTab('queue')}
-                className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'queue'
-                    ? 'bg-white text-slate-900 shadow-sm font-bold'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Activity className="w-4 h-4 text-red-600" />
-                Incoming Queue ({incomingQueue.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('caseload')}
-                className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'caseload'
-                    ? 'bg-white text-slate-900 shadow-sm font-bold'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Bed className="w-4 h-4 text-emerald-600" />
-                Active Inpatients ({myCaseload.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('recovered')}
-                className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'recovered'
-                    ? 'bg-white text-slate-900 shadow-sm font-bold'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                Discharged ({recoveredArchive.length})
-              </button>
+          
+          {/* Main View Tabs & Search Header */}
+          <div className="p-6 border-b border-slate-100 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
+                <button
+                  onClick={() => setActiveTab('queue')}
+                  className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'queue'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Activity className="w-4 h-4 text-red-600" />
+                  Incoming Queue ({incomingQueue.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('caseload')}
+                  className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'caseload'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Bed className="w-4 h-4 text-emerald-600" />
+                  Active Inpatients ({myCaseload.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('recovered')}
+                  className={`px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'recovered'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                  Discharged ({recoveredArchive.length})
+                </button>
+              </div>
+
+              {/* Filter Pills for Queue */}
+              {activeTab === 'queue' && (
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                  {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setRiskFilter(tag)}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                        riskFilter === tag
+                          ? 'bg-white text-slate-900 shadow-sm font-bold'
+                          : 'text-slate-500 hover:text-slate-900 font-medium'
+                      }`}
+                    >
+                      {tag === 'MEDIUM' ? 'MED' : tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Filter Pills */}
-            {activeTab === 'queue' && (
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
-                {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setRiskFilter(tag)}
-                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                      riskFilter === tag
-                        ? 'bg-white text-slate-900 shadow-sm font-bold'
-                        : 'text-slate-500 hover:text-slate-900 font-medium'
-                    }`}
-                  >
-                    {tag === 'MEDIUM' ? 'MED' : tag}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Live Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search patient name, MRN, complaint, ward, or bed..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition"
+              />
+            </div>
           </div>
 
           {/* TAB VIEW 1: INCOMING TRIAGE QUEUE TABLE */}
@@ -795,7 +880,6 @@ export default function DoctorTriagePage() {
                           : patient.risk === 'MEDIUM'
                           ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-
                       return (
                         <tr
                           key={patient.id}
@@ -986,6 +1070,7 @@ export default function DoctorTriagePage() {
 
         {/* RIGHT COLUMN: CHART & CLINICAL PROTOCOLS */}
         <div className="space-y-8">
+          
           {/* Risk Distribution Chart Card */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
             <h3 className="text-base font-bold text-slate-900 mb-1">Risk Breakdown</h3>
@@ -1040,6 +1125,7 @@ export default function DoctorTriagePage() {
               })}
             </div>
           </div>
+
         </div>
       </div>
 
@@ -1047,6 +1133,7 @@ export default function DoctorTriagePage() {
       {selectedPatient && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-3xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in duration-200 flex flex-col max-h-[90vh]">
+            
             {/* Modal Header */}
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -1070,6 +1157,7 @@ export default function DoctorTriagePage() {
 
             {/* Modal Scrollable Body */}
             <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+              
               {/* Vital Signs Telemetry */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
@@ -1104,7 +1192,7 @@ export default function DoctorTriagePage() {
                 <p className="text-sm text-slate-700 leading-relaxed">{selectedPatient.rationale}</p>
               </div>
 
-              {/* Pathway Selector: Inpatient Admission vs Outpatient Consultation */}
+              {/* Pathway Selector */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
                   Select Clinical Care Pathway
@@ -1127,7 +1215,6 @@ export default function DoctorTriagePage() {
                       <p className="text-[11px] text-slate-500">Allocate Live Master Bed & Inpatient Chart</p>
                     </div>
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setCarePathway('Outpatient')}
@@ -1181,7 +1268,6 @@ export default function DoctorTriagePage() {
                         })}
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 mb-1">
                         Select Available Bed
@@ -1395,7 +1481,6 @@ export default function DoctorTriagePage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600 leading-relaxed">
                 Confirming recovery will change the bed <strong className="text-slate-900">{dischargeTarget.bed}</strong> status back to <strong className="text-emerald-600">Available</strong> in the Hospital Ward Master.
@@ -1427,7 +1512,6 @@ export default function DoctorTriagePage() {
                 ></textarea>
               </div>
             </div>
-
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
               <button
                 onClick={() => setDischargeTarget(null)}
@@ -1446,6 +1530,7 @@ export default function DoctorTriagePage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -20,7 +20,8 @@ import {
   Layers,
   HelpCircle,
   Brain,
-  Play
+  Play,
+  ArrowRight
 } from 'lucide-react';
 
 // Full 132-Symptom ML Dataset
@@ -213,29 +214,34 @@ function computeDifferential(symptoms) {
 
 export default function SymptomCheckerPage() {
   const [selectedSymptoms, setSelectedSymptoms] = useState(['high_fever', 'joint_pain']);
-  const [predictionResult, setPredictionResult] = useState(null); // STORES PREDICTION ONLY AFTER USER CLICKS PREDICT
+  const [predictionResult, setPredictionResult] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isPredicting, setIsPredicting] = useState(false);
+  const [isDispatched, setIsDispatched] = useState(false);
 
   const clinicalContext = useClinical();
-  const { currentUser } = useAuth();
+  const { user, currentUser } = useAuth();
+  const activeUser = user || currentUser;
   const { showToast } = useToast();
 
   const toggleSymptom = (id) => {
     setSelectedSymptoms((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+    setIsDispatched(false);
   };
 
   const removeSymptom = (id) => {
     setSelectedSymptoms((prev) => prev.filter((item) => item !== id));
+    setIsDispatched(false);
   };
 
   const clearAll = () => {
     setSelectedSymptoms([]);
     setPredictionResult(null);
+    setIsDispatched(false);
     showToast('Selections and prediction reset.');
   };
 
@@ -247,6 +253,7 @@ export default function SymptomCheckerPage() {
     }
 
     setIsPredicting(true);
+    setIsDispatched(false);
 
     setTimeout(() => {
       const result = computeDifferential(selectedSymptoms);
@@ -265,7 +272,7 @@ export default function SymptomCheckerPage() {
     });
   }, [searchQuery, activeTab, selectedSymptoms]);
 
-  // Read from predictionResult ONLY (not live derived)
+  // Read from predictionResult ONLY
   const topPerc = predictionResult ? predictionResult.topPerc : 0;
   const topName = predictionResult ? predictionResult.topName : 'Awaiting Prediction';
   const differentials = predictionResult 
@@ -280,31 +287,71 @@ export default function SymptomCheckerPage() {
   const circumference = 502.6;
   const strokeDashoffset = circumference - (topPerc / 100) * circumference;
 
+  // DIRECT DISPATCH TO DOCTOR TRIAGE QUEUE IN LOCALSTORAGE
   const handleSendToDoctor = () => {
     if (!predictionResult) {
       showToast('Please run "Predict Diagnosis" first before sending to doctor.', 'error');
       return;
     }
 
+    const patientName = activeUser?.name || 'Safan Khan';
+    const patientMrn = activeUser?.mrn || 'MRN-884920';
     const symptomNames = selectedSymptoms.map((id) => formatSymptomName(id));
-    const triageDispatcher = clinicalContext?.addTriagePatient || clinicalContext?.submitPatientTriage;
 
-    if (triageDispatcher) {
-      triageDispatcher({
-        name: currentUser?.name || 'Safan Khan',
-        age: 29,
-        gender: 'Male',
-        esi: typeof esiLevel === 'number' ? esiLevel : 3,
-        esiLabel: isCritical ? 'ESI 1 - Resuscitation' : esiLevel === 2 ? 'ESI 2 - Emergent' : 'ESI 3 - Urgent',
-        chiefComplaint: `${topName} (${symptomNames.slice(0, 3).join(', ')})`,
-        vitals: isCritical ? 'BP 155/95 • HR 118 • SpO2 93%' : 'BP 118/76 • HR 74 • SpO2 99%',
-        aiConfidence: `${topPerc}%`,
-        differential: differentials.map((d) => d.name).join(', '),
-        waitingTime: 'Just now'
-      });
+    // Determine estimated vitals based on prediction severity
+    const vitalsObj = isCritical
+      ? { hr: 118, bp: '155/95', spo2: 91, temp: selectedSymptoms.includes('high_fever') ? 102.8 : 98.6 }
+      : esiLevel === 2
+      ? { hr: 94, bp: '135/88', spo2: 96, temp: selectedSymptoms.includes('high_fever') ? 101.5 : 98.8 }
+      : { hr: 78, bp: '120/80', spo2: 99, temp: 98.4 };
+
+    // Format new emergency triage patient card
+    const newTriageEntry = {
+      id: `TRG-${Math.floor(100 + Math.random() * 900)}`,
+      mrn: patientMrn,
+      name: patientName,
+      age: 29,
+      gender: 'Male',
+      complaint: `${topName} (${symptomNames.slice(0, 3).join(', ')})`,
+      risk: isCritical ? 'Critical' : esiLevel === 2 ? 'High' : 'Moderate',
+      esi: `ESI-${esiLevel}`,
+      wait: '0m (AI Portal)',
+      vitals: vitalsObj,
+      rationale: recommendation,
+      source: 'AI Symptom Checker'
+    };
+
+    try {
+      // 1. Read existing queue
+      const existingQueueRaw = localStorage.getItem('hospital_triage_queue');
+      let currentQueue = [];
+      if (existingQueueRaw) {
+        currentQueue = JSON.parse(existingQueueRaw);
+      }
+
+      // 2. Prepend patient (so they show at the very top of Doctor's Triage queue)
+      // Remove any prior pending entry for the same MRN to prevent duplicates
+      const filteredQueue = currentQueue.filter((p) => p.mrn !== patientMrn);
+      const updatedQueue = [newTriageEntry, ...filteredQueue];
+
+      // 3. Save directly to localStorage
+      localStorage.setItem('hospital_triage_queue', JSON.stringify(updatedQueue));
+
+      // 4. Update clinical context if available
+      const triageDispatcher = clinicalContext?.addTriagePatient || clinicalContext?.submitPatientTriage;
+      if (typeof triageDispatcher === 'function') {
+        triageDispatcher(newTriageEntry);
+      }
+
+      // 5. Fire window storage event for instant multi-tab sync
+      window.dispatchEvent(new Event('storage'));
+
+      setIsDispatched(true);
+      showToast(`Triage record forwarded to Doctor Caseload Queue (Acuity: ESI ${esiLevel})!`, 'success');
+    } catch (e) {
+      console.error('Error dispatching triage to doctor:', e);
+      showToast('Failed to dispatch record. Please try again.', 'error');
     }
-
-    showToast(`Triage record forwarded to Doctor Caseload Queue (Acuity: ESI ${esiLevel})!`, 'success');
   };
 
   return (
@@ -350,13 +397,44 @@ export default function SymptomCheckerPage() {
 
           <button
             onClick={handleSendToDoctor}
-            className="px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md shadow-red-600/25 transition flex items-center gap-2 cursor-pointer"
+            disabled={!predictionResult || isDispatched}
+            className={`px-4 py-2.5 text-xs font-bold text-white rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer ${
+              isDispatched 
+                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25' 
+                : 'bg-red-600 hover:bg-red-700 disabled:opacity-50 shadow-red-600/25'
+            }`}
           >
-            <Send className="w-3.5 h-3.5" />
-            <span>Dispatch to Doctor</span>
+            {isDispatched ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                <span>Queued in ER</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" />
+                <span>Dispatch to Doctor</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Dispatched Notification Banner */}
+      {isDispatched && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-emerald-950">Patient Dispatched to Emergency Triage Queue</p>
+              <p className="text-[11px] font-semibold text-emerald-700">
+                Acuity Level <strong>ESI-{esiLevel}</strong> assigned. The attending ER physician can now view this case in the triage caselist.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Selected Symptoms Staging Panel */}
       <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">

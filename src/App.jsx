@@ -27,6 +27,7 @@ import AdminMastersPage from "./pages/admin/AdminMastersPage";
 // Shared Pages
 import AiAssistantPage from "./pages/common/AiAssistantPage";
 import ProfileSettingsPage from "./pages/common/ProfileSettingsPage";
+import CareMessagesPage from "./pages/common/CareMessagesPage";
 
 function ProtectedRoute({ children }) {
   const { currentUser } = useAuth();
@@ -80,7 +81,8 @@ export default function App() {
                   <Route path="/admin-ledger" element={<AdminLedgerPage />} />
                   <Route path="/admin-masters" element={<AdminMastersPage />} />
 
-                  {/* Shared Assistant & Settings */}
+                  {/* Shared Assistant, Messages & Settings */}
+                  <Route path="/care-messages" element={<CareMessagesPage />} />
                   <Route path="/ai-assistant" element={<AiAssistantPage />} />
                   <Route path="/profile-settings" element={<ProfileSettingsPage />} />
                 </Route>
