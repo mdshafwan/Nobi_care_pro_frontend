@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useClinical } from '../context/ClinicalContext';
-import { useToast } from '../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { useClinical } from '../../context/ClinicalContext';
+import { useToast } from '../../context/ToastContext';
 import {
   Chart as ChartJS,
   CategoryScale,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useClinical } from '../context/ClinicalContext';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useClinical } from '../../context/ClinicalContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { 
   Stethoscope, 
   Send, 

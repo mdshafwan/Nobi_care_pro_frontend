@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function ProfileSettingsPage() {
   const { currentRoleData, activeRoleView, updateCurrentRoleProfile } = useAuth();
@@ -135,7 +135,7 @@ export default function ProfileSettingsPage() {
         <div className="w-full sm:w-auto">
           <button 
             onClick={handleSaveAllSettings} 
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-900/20 transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
@@ -152,7 +152,7 @@ export default function ProfileSettingsPage() {
         <div className="md:col-span-4 bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-2 h-fit">
           <button 
             onClick={() => setActiveTab('profileTab')} 
-            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all ${
+            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
               activeTab === 'profileTab' 
                 ? 'bg-red-50 text-red-700 border border-red-200' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
@@ -169,7 +169,7 @@ export default function ProfileSettingsPage() {
 
           <button 
             onClick={() => setActiveTab('roleSpecificTab')} 
-            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs flex items-center gap-3 transition-all ${
+            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs flex items-center gap-3 transition-all cursor-pointer ${
               activeTab === 'roleSpecificTab' 
                 ? 'bg-red-50 text-red-700 font-bold border border-red-200' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-semibold border border-transparent'
@@ -186,7 +186,7 @@ export default function ProfileSettingsPage() {
 
           <button 
             onClick={() => setActiveTab('securityTab')} 
-            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs flex items-center gap-3 transition-all ${
+            className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs flex items-center gap-3 transition-all cursor-pointer ${
               activeTab === 'securityTab' 
                 ? 'bg-red-50 text-red-700 font-bold border border-red-200' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-semibold border border-transparent'
@@ -731,7 +731,7 @@ export default function ProfileSettingsPage() {
                 <div className="pt-2">
                   <button 
                     type="submit" 
-                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all"
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                   >
                     Update Password Hash
                   </button>

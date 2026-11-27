@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, AlertTriangle, Sparkles, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AiAssistantPage() {
   const { currentRole, currentUserProfile } = useAuth();
