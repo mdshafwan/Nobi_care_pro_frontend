@@ -11,7 +11,8 @@ import {
   LayoutDashboard, 
   Stethoscope, 
   Bot,
-  Plus
+  Plus,
+  Layers
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -38,6 +39,7 @@ export default function Sidebar() {
     admin: [
       { name: 'Hospital Analytics', path: '/admin-analytics', icon: BarChart3 },
       { name: 'Financial Ledger', path: '/admin-ledger', icon: Receipt },
+      { name: 'System Masters', path: '/admin-masters', icon: Layers },
       { name: 'Settings & Profile', path: '/profile-settings', icon: UserCog },
     ]
   };

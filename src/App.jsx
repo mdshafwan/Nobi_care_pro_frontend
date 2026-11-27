@@ -17,6 +17,7 @@ import LabOcrPage from "./pages/LabOcrPage";
 import AiAssistantPage from "./pages/AiAssistantPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminLedgerPage from "./pages/AdminLedgerPage";
+import AdminMastersPage from "./pages/AdminMastersPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 
 function ProtectedRoute({ children }) {
@@ -69,6 +70,7 @@ export default function App() {
                   {/* Admin Workspace */}
                   <Route path="/admin-analytics" element={<AdminAnalyticsPage />} />
                   <Route path="/admin-ledger" element={<AdminLedgerPage />} />
+                  <Route path="/admin-masters" element={<AdminMastersPage />} />
 
                   {/* Shared Assistant & Settings */}
                   <Route path="/ai-assistant" element={<AiAssistantPage />} />

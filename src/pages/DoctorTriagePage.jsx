@@ -13,11 +13,88 @@ import {
   Zap, 
   ShieldAlert,
   FileCheck,
-  Check
+  Check,
+  Pill,
+  Plus,
+  Trash2,
+  Building,
+  Stethoscope,
+  ChevronRight,
+  ClipboardList
 } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
+
+// Fallback Ward Master Data
+const DEFAULT_WARD_MASTER = [
+  {
+    id: 'W-1',
+    name: 'Intensive Care Unit (ICU)',
+    code: 'ICU-A',
+    floor: '3rd Floor - Wing B',
+    tariff: 8500,
+    type: 'Critical Care',
+    totalBeds: 12,
+    occupiedBeds: 3,
+    beds: [
+      { id: 'B-101', name: 'ICU-Bed 01', status: 'Occupied', patient: 'Arthur Pendelton' },
+      { id: 'B-102', name: 'ICU-Bed 02', status: 'Available', patient: null },
+      { id: 'B-103', name: 'ICU-Bed 03', status: 'Available', patient: null },
+      { id: 'B-104', name: 'ICU-Bed 04', status: 'Occupied', patient: 'Marcus Brody' },
+      { id: 'B-105', name: 'ICU-Bed 05', status: 'Available', patient: null },
+      { id: 'B-106', name: 'ICU-Bed 06', status: 'Occupied', patient: 'Sophia Loren' }
+    ]
+  },
+  {
+    id: 'W-2',
+    name: 'Emergency & Trauma Bay',
+    code: 'ED-T',
+    floor: 'Ground Floor',
+    tariff: 3500,
+    type: 'Emergency',
+    totalBeds: 8,
+    occupiedBeds: 2,
+    beds: [
+      { id: 'B-201', name: 'ED-Trauma Bay 01', status: 'Occupied', patient: 'George Weasley' },
+      { id: 'B-202', name: 'ED-Rapid Assessment 02', status: 'Available', patient: null },
+      { id: 'B-203', name: 'ED-Rapid Assessment 03', status: 'Available', patient: null },
+      { id: 'B-204', name: 'ED-Cardiac Monitored 04', status: 'Available', patient: null },
+      { id: 'B-205', name: 'ED-Observation 05', status: 'Occupied', patient: 'Eleanor Vance' }
+    ]
+  },
+  {
+    id: 'W-3',
+    name: 'General Medical Ward',
+    code: 'GEN-M',
+    floor: '2nd Floor - Wing A',
+    tariff: 2200,
+    type: 'General Inpatient',
+    totalBeds: 16,
+    occupiedBeds: 4,
+    beds: [
+      { id: 'B-301', name: 'GEN-Bed 101', status: 'Available', patient: null },
+      { id: 'B-302', name: 'GEN-Bed 102', status: 'Available', patient: null },
+      { id: 'B-303', name: 'GEN-Bed 103', status: 'Available', patient: null },
+      { id: 'B-304', name: 'GEN-Bed 104', status: 'Occupied', patient: 'David Hemmings' }
+    ]
+  },
+  {
+    id: 'W-4',
+    name: 'Cardiology Step-down',
+    code: 'CARD-S',
+    floor: '4th Floor - Wing C',
+    tariff: 4800,
+    type: 'Specialty Care',
+    totalBeds: 10,
+    occupiedBeds: 3,
+    beds: [
+      { id: 'B-401', name: 'CARD-Bed 01', status: 'Available', patient: null },
+      { id: 'B-402', name: 'CARD-Bed 02', status: 'Available', patient: null },
+      { id: 'B-403', name: 'CARD-Bed 03', status: 'Occupied', patient: 'Clara Oswald' }
+    ]
+  }
+];
 
 const INITIAL_INCOMING_QUEUE = [
   {
@@ -110,10 +187,16 @@ const INITIAL_MY_CASELOAD = [
     complaint: 'Closed displaced radius fracture following fall',
     risk: 'MEDIUM',
     esi: 'ESI 3',
-    bed: 'Bed ED-02 (Orthopedic)',
+    careType: 'Inpatient',
+    wardId: 'W-1',
+    wardName: 'Intensive Care Unit (ICU)',
+    bed: 'ICU-Bed 01',
     vitals: { hr: '76 bpm', bp: '138/82', spo2: '98%', temp: '98.4°F' },
     status: 'Cast Applied & Stabilized',
-    assignedAt: '45 mins ago'
+    assignedAt: '45 mins ago',
+    prescriptions: [
+      { id: 'RX-1', medication: 'Acetaminophen 650mg', dosage: '1 Tab', timing: ['Morning', 'Night'], meal: 'After Food', duration: '5 Days' }
+    ]
   },
   {
     id: 'P-882',
@@ -124,10 +207,17 @@ const INITIAL_MY_CASELOAD = [
     complaint: 'Acute dehydration and viral gastroenteritis',
     risk: 'LOW',
     esi: 'ESI 4',
-    bed: 'Bed ED-06 (Observation)',
+    careType: 'Inpatient',
+    wardId: 'W-2',
+    wardName: 'Emergency & Trauma Bay',
+    bed: 'ED-Trauma Bay 01',
     vitals: { hr: '72 bpm', bp: '120/78', spo2: '99%', temp: '98.6°F' },
     status: 'IV Fluids Completed - Resolving',
-    assignedAt: '1 hr 15 mins ago'
+    assignedAt: '1 hr 15 mins ago',
+    prescriptions: [
+      { id: 'RX-2', medication: 'Oral Rehydration Salts', dosage: '1 Sachet in 1L Water', timing: ['Morning', 'Noon', 'Night'], meal: 'Before Food', duration: '3 Days' },
+      { id: 'RX-3', medication: 'Ondansetron 4mg', dosage: '1 Tab', timing: ['Morning'], meal: 'Before Food', duration: '2 Days' }
+    ]
   }
 ];
 
@@ -137,24 +227,18 @@ const INITIAL_RECOVERED_ARCHIVE = [
     mrn: 'MRN-221049',
     name: 'Liam Neeson',
     diagnosis: 'Benign Paroxysmal Positional Vertigo',
+    careType: 'Outpatient Consultation',
     dischargeTime: '10:42 AM',
-    outcome: 'Epley Maneuver Successful - Discharged'
+    outcome: 'Epley Maneuver Successful - Discharged Home'
   },
   {
     id: 'P-802',
     mrn: 'MRN-119284',
     name: 'Emma Watson',
     diagnosis: 'Mild Anaphylactoid Food Reaction',
+    careType: 'Inpatient Step-down',
     dischargeTime: '11:15 AM',
     outcome: 'Full Resolution Post-Antihistamine'
-  },
-  {
-    id: 'P-803',
-    mrn: 'MRN-339210',
-    name: 'Julian Vance',
-    diagnosis: 'Acute Corneal Abrasion',
-    dischargeTime: '12:05 PM',
-    outcome: 'Erythromycin Ointment Applied - Discharged'
   }
 ];
 
@@ -163,19 +247,38 @@ export default function DoctorTriagePage() {
   const [myCaseload, setMyCaseload] = useState(INITIAL_MY_CASELOAD);
   const [recoveredArchive, setRecoveredArchive] = useState(INITIAL_RECOVERED_ARCHIVE);
 
+  // Ward Master State (synced with Admin Master)
+  const [wards, setWards] = useState(() => {
+    const saved = localStorage.getItem('hospital_ward_master');
+    return saved ? JSON.parse(saved) : DEFAULT_WARD_MASTER;
+  });
+
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'caseload' | 'recovered'
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'
   const [searchQuery, setSearchQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
-  // Modals state
+  // Review / Intake Modal State
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [selectedBed, setSelectedBed] = useState('Bed ED-03 (Rapid Assessment)');
+  const [carePathway, setCarePathway] = useState('Inpatient'); // 'Inpatient' | 'Outpatient'
+  const [selectedWardId, setSelectedWardId] = useState('');
+  const [selectedBedName, setSelectedBedName] = useState('');
+  const [clinicalNotes, setClinicalNotes] = useState('');
+
+  // Prescription Authoring in Modal
+  const [prescriptionsDraft, setPrescriptionsDraft] = useState([]);
+  const [rxDrugName, setRxDrugName] = useState('');
+  const [rxDosage, setRxDosage] = useState('1 Tablet');
+  const [rxTiming, setRxTiming] = useState({ morning: true, noon: false, night: true });
+  const [rxMeal, setRxMeal] = useState('After Food');
+  const [rxDuration, setRxDuration] = useState('5 Days');
+
+  // Discharge Modal State
   const [dischargeTarget, setDischargeTarget] = useState(null);
   const [dischargeDisposition, setDischargeDisposition] = useState('Full Recovery - Discharged Home');
   const [dischargeNotes, setDischargeNotes] = useState('');
 
-  // Toast state
+  // Toast State
   const [toast, setToast] = useState(null);
 
   // Chart ref
@@ -189,10 +292,28 @@ export default function DoctorTriagePage() {
     }, 3200);
   };
 
+  // Sync Ward Master from LocalStorage whenever page gains focus
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = localStorage.getItem('hospital_ward_master');
+      if (saved) setWards(JSON.parse(saved));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Update localStorage helper
+  const updateWardMasterStorage = (newWards) => {
+    setWards(newWards);
+    localStorage.setItem('hospital_ward_master', JSON.stringify(newWards));
+  };
+
   // Sync Telemetry
   const refreshTriageData = () => {
+    const saved = localStorage.getItem('hospital_ward_master');
+    if (saved) setWards(JSON.parse(saved));
     setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    showToast('Telemetry stream synchronized with hospital EHR');
+    showToast('Telemetry stream & Ward Bed Matrix synchronized');
   };
 
   // Chart Management
@@ -248,35 +369,172 @@ export default function DoctorTriagePage() {
     };
   }, [incomingQueue]);
 
-  // Handle Bed Assignment
-  const handleAssignToCaseload = () => {
-    if (!selectedPatient) return;
+  // Handle open review modal
+  const handleOpenReview = (patient) => {
+    setSelectedPatient(patient);
+    setCarePathway('Inpatient');
+    setClinicalNotes('');
+    setPrescriptionsDraft([]);
+    setRxDrugName('');
 
-    setIncomingQueue((prev) => prev.filter((p) => p.id !== selectedPatient.id));
-    setMyCaseload((prev) => [
-      {
-        ...selectedPatient,
-        bed: selectedBed,
-        status: 'Under Active Evaluation',
-        assignedAt: 'Just now',
-      },
-      ...prev,
-    ]);
-
-    const patientName = selectedPatient.name;
-    setSelectedPatient(null);
-    showToast(`${patientName} assigned to ${selectedBed}`);
-
-    setTimeout(() => {
-      setActiveTab('caseload');
-    }, 400);
+    // Pre-select first ward with available beds
+    const availableWard = wards.find((w) => w.beds.some((b) => b.status === 'Available')) || wards[0];
+    if (availableWard) {
+      setSelectedWardId(availableWard.id);
+      const firstFreeBed = availableWard.beds.find((b) => b.status === 'Available');
+      setSelectedBedName(firstFreeBed ? firstFreeBed.name : '');
+    }
   };
 
-  // Handle Mark Recovered & Discharge
+  // Add Prescription to Draft list
+  const handleAddPrescriptionDraft = (e) => {
+    e.preventDefault();
+    if (!rxDrugName.trim()) return;
+
+    const timingList = [];
+    if (rxTiming.morning) timingList.push('Morning');
+    if (rxTiming.noon) timingList.push('Noon');
+    if (rxTiming.night) timingList.push('Night');
+
+    const newRx = {
+      id: `RX-${Date.now().toString().slice(-4)}`,
+      medication: rxDrugName.trim(),
+      dosage: rxDosage,
+      timing: timingList.length > 0 ? timingList : ['Morning'],
+      meal: rxMeal,
+      duration: rxDuration,
+    };
+
+    setPrescriptionsDraft([...prescriptionsDraft, newRx]);
+    setRxDrugName('');
+  };
+
+  const handleRemovePrescriptionDraft = (id) => {
+    setPrescriptionsDraft(prescriptionsDraft.filter((item) => item.id !== id));
+  };
+
+  // Handle Commit Intake / Admission / Outpatient Consultation
+  const handleCommitClinicalAction = () => {
+    if (!selectedPatient) return;
+
+    const currentWard = wards.find((w) => w.id === selectedWardId);
+    const wardName = currentWard ? currentWard.name : 'Emergency & Trauma Bay';
+    const bedName = selectedBedName || 'ED-Bed Standing';
+
+    // 1. If Inpatient, update Ward Master occupancy
+    if (carePathway === 'Inpatient') {
+      const updatedWards = wards.map((w) => {
+        if (w.id === selectedWardId) {
+          const updatedBeds = w.beds.map((b) => {
+            if (b.name === bedName) {
+              return { ...b, status: 'Occupied', patient: selectedPatient.name };
+            }
+            return b;
+          });
+          const occupiedCount = updatedBeds.filter((b) => b.status === 'Occupied').length;
+          return { ...w, beds: updatedBeds, occupiedBeds: occupiedCount };
+        }
+        return w;
+      });
+      updateWardMasterStorage(updatedWards);
+    }
+
+    // 2. Persist admission & prescriptions for Patient Overview Portal
+    const globalPrescriptions = JSON.parse(localStorage.getItem('hospital_prescriptions') || '[]');
+    const newGlobalRx = prescriptionsDraft.map((rx) => ({
+      ...rx,
+      mrn: selectedPatient.mrn,
+      patientName: selectedPatient.name,
+      prescribedBy: 'Dr. Sarah Jenkins (Cardiology/Emergency)',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      takenToday: false,
+    }));
+    localStorage.setItem('hospital_prescriptions', JSON.stringify([...newGlobalRx, ...globalPrescriptions]));
+
+    // Record patient admission status in LocalStorage for Patient Overview Page
+    const patientAdmissions = JSON.parse(localStorage.getItem('hospital_patient_admissions') || '{}');
+    patientAdmissions[selectedPatient.mrn] = {
+      careType: carePathway,
+      ward: carePathway === 'Inpatient' ? wardName : 'Outpatient Ambulatory Clinic',
+      bed: carePathway === 'Inpatient' ? bedName : 'N/A (Consultation Only)',
+      status: carePathway === 'Inpatient' ? 'Admitted & Under Active Treatment' : 'Outpatient Prescribed & Discharged',
+      admittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      attendingPhysician: 'Dr. Sarah Jenkins',
+      diagnosis: selectedPatient.complaint
+    };
+    localStorage.setItem('hospital_patient_admissions', JSON.stringify(patientAdmissions));
+
+    // 3. Update queues
+    setIncomingQueue((prev) => prev.filter((p) => p.id !== selectedPatient.id));
+
+    if (carePathway === 'Inpatient') {
+      setMyCaseload((prev) => [
+        {
+          ...selectedPatient,
+          careType: 'Inpatient',
+          wardId: selectedWardId,
+          wardName,
+          bed: bedName,
+          status: 'Under Active Evaluation',
+          assignedAt: 'Just now',
+          prescriptions: prescriptionsDraft,
+        },
+        ...prev,
+      ]);
+      showToast(`${selectedPatient.name} admitted to ${wardName} (${bedName})`);
+      setTimeout(() => setActiveTab('caseload'), 300);
+    } else {
+      // Outpatient: Add directly to Recovered/Discharged archive
+      setRecoveredArchive((prev) => [
+        {
+          id: selectedPatient.id,
+          mrn: selectedPatient.mrn,
+          name: selectedPatient.name,
+          diagnosis: selectedPatient.complaint,
+          careType: 'Outpatient Consultation',
+          dischargeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          outcome: 'Outpatient Consultation Completed - Prescriptions Issued',
+        },
+        ...prev,
+      ]);
+      showToast(`${selectedPatient.name} completed outpatient consultation & prescriptions dispensed`);
+      setTimeout(() => setActiveTab('recovered'), 300);
+    }
+
+    setSelectedPatient(null);
+  };
+
+  // Handle Mark Recovered & Free Bed
   const handleConfirmDischarge = () => {
     if (!dischargeTarget) return;
 
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Free bed in Ward Master if patient was Inpatient
+    if (dischargeTarget.wardId && dischargeTarget.bed) {
+      const updatedWards = wards.map((w) => {
+        if (w.id === dischargeTarget.wardId || w.name === dischargeTarget.wardName) {
+          const updatedBeds = w.beds.map((b) => {
+            if (b.name === dischargeTarget.bed) {
+              return { ...b, status: 'Available', patient: null };
+            }
+            return b;
+          });
+          const occupiedCount = updatedBeds.filter((b) => b.status === 'Occupied').length;
+          return { ...w, beds: updatedBeds, occupiedBeds: occupiedCount };
+        }
+        return w;
+      });
+      updateWardMasterStorage(updatedWards);
+    }
+
+    // Update patient admissions status in storage
+    const patientAdmissions = JSON.parse(localStorage.getItem('hospital_patient_admissions') || '{}');
+    if (patientAdmissions[dischargeTarget.mrn]) {
+      patientAdmissions[dischargeTarget.mrn].status = 'Discharged & Recovered';
+      patientAdmissions[dischargeTarget.mrn].dischargedAt = now;
+      localStorage.setItem('hospital_patient_admissions', JSON.stringify(patientAdmissions));
+    }
 
     setMyCaseload((prev) => prev.filter((p) => p.id !== dischargeTarget.id));
     setRecoveredArchive((prev) => [
@@ -285,6 +543,7 @@ export default function DoctorTriagePage() {
         mrn: dischargeTarget.mrn,
         name: dischargeTarget.name,
         diagnosis: dischargeTarget.complaint,
+        careType: dischargeTarget.careType || 'Inpatient',
         dischargeTime: now,
         outcome: dischargeDisposition,
       },
@@ -292,9 +551,10 @@ export default function DoctorTriagePage() {
     ]);
 
     const patientName = dischargeTarget.name;
+    const freedBed = dischargeTarget.bed;
     setDischargeTarget(null);
     setDischargeNotes('');
-    showToast(`${patientName} marked as Recovered & Discharged`);
+    showToast(`${patientName} discharged. ${freedBed ? `Bed ${freedBed} is now Available.` : ''}`);
   };
 
   // Computed Values
@@ -311,11 +571,12 @@ export default function DoctorTriagePage() {
   const filteredQueue = incomingQueue.filter((p) => {
     const matchesRisk = riskFilter === 'ALL' || p.risk === riskFilter;
     const query = searchQuery.toLowerCase().trim();
-    const matchesSearch =
-      p.name.toLowerCase().includes(query) ||
-      p.mrn.toLowerCase().includes(query) ||
-      p.complaint.toLowerCase().includes(query);
-    return matchesRisk && matchesSearch;
+    return (
+      matchesRisk &&
+      (p.name.toLowerCase().includes(query) ||
+        p.mrn.toLowerCase().includes(query) ||
+        p.complaint.toLowerCase().includes(query))
+    );
   });
 
   const filteredCaseload = myCaseload.filter((p) => {
@@ -323,7 +584,7 @@ export default function DoctorTriagePage() {
     return (
       p.name.toLowerCase().includes(query) ||
       p.mrn.toLowerCase().includes(query) ||
-      p.bed.toLowerCase().includes(query)
+      (p.bed && p.bed.toLowerCase().includes(query))
     );
   });
 
@@ -335,6 +596,12 @@ export default function DoctorTriagePage() {
       p.diagnosis.toLowerCase().includes(query)
     );
   });
+
+  // Selected ward's available beds for modal
+  const activeWardObj = wards.find((w) => w.id === selectedWardId);
+  const availableBedsInSelectedWard = activeWardObj
+    ? activeWardObj.beds.filter((b) => b.status === 'Available')
+    : [];
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto p-8 custom-scrollbar bg-slate-50 font-['Plus_Jakarta_Sans',sans-serif]">
@@ -352,13 +619,13 @@ export default function DoctorTriagePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-600">
-            Module 1 • Emergency Triage Engine
+            Module 1 • Clinical Triage & Inpatient Bed Allocation
           </span>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Emergency Triage & Active Clinical Caseload
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time acuity prioritization, physician bed assignment, and patient recovery discharge.
+            Real-time acuity prioritization, live Master Bed assignment, outpatient consultation & prescription authoring.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -367,7 +634,7 @@ export default function DoctorTriagePage() {
             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition flex items-center gap-2 cursor-pointer"
           >
             <RotateCw className="w-4 h-4 text-slate-500" />
-            Sync Telemetry
+            Sync Telemetry & Beds
           </button>
           <span className="text-xs text-slate-400 font-medium">
             Last synced: <span className="text-slate-600 font-bold">{lastSyncTime}</span>
@@ -402,9 +669,9 @@ export default function DoctorTriagePage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-red-600">{myCaseload.length}</span>
-            <span className="text-xs font-semibold text-slate-500">Under My Care</span>
+            <span className="text-xs font-semibold text-slate-500">Inpatients</span>
           </div>
-          <p className="text-xs text-slate-500 mt-2">Assigned to Dr. Sarah Jenkins</p>
+          <p className="text-xs text-slate-500 mt-2">Occupying Live Master Beds</p>
         </div>
 
         {/* KPI 3: High Risk (ESI 1-2) */}
@@ -422,10 +689,10 @@ export default function DoctorTriagePage() {
           <p className="text-xs text-slate-400 mt-2">Critical telemetry monitoring</p>
         </div>
 
-        {/* KPI 4: Recovered Today */}
+        {/* KPI 4: Recovered & Discharged */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Recovered Today</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Resolved Today</span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5" />
             </div>
@@ -434,7 +701,7 @@ export default function DoctorTriagePage() {
             <span className="text-3xl font-extrabold text-emerald-600">{recoveredArchive.length}</span>
             <span className="text-xs font-semibold text-emerald-600">Discharged</span>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Successful clinical resolutions</p>
+          <p className="text-xs text-slate-400 mt-2">Beds freed & Rx dispensed</p>
         </div>
       </div>
 
@@ -464,8 +731,8 @@ export default function DoctorTriagePage() {
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                <UserCheck className="w-4 h-4 text-emerald-600" />
-                My Assigned Caseload ({myCaseload.length})
+                <Bed className="w-4 h-4 text-emerald-600" />
+                Active Inpatients ({myCaseload.length})
               </button>
               <button
                 onClick={() => setActiveTab('recovered')}
@@ -480,7 +747,7 @@ export default function DoctorTriagePage() {
               </button>
             </div>
 
-            {/* Filter Pills (Active for Incoming Queue) */}
+            {/* Filter Pills */}
             {activeTab === 'queue' && (
               <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
                 {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map((tag) => (
@@ -510,7 +777,7 @@ export default function DoctorTriagePage() {
                     <th className="py-3.5 px-4">Chief Complaint / Vitals</th>
                     <th className="py-3.5 px-4 text-center">ESI Acuity</th>
                     <th className="py-3.5 px-4 text-center">Wait Time</th>
-                    <th className="py-3.5 px-6 text-right">Action</th>
+                    <th className="py-3.5 px-6 text-right">Clinical Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm font-medium">
@@ -532,14 +799,14 @@ export default function DoctorTriagePage() {
                       return (
                         <tr
                           key={patient.id}
-                          onClick={() => setSelectedPatient(patient)}
+                          onClick={() => handleOpenReview(patient)}
                           className="hover:bg-slate-50/80 transition cursor-pointer group"
                         >
                           <td className="py-4 px-6">
                             <div className="font-bold text-slate-900 group-hover:text-red-600 transition-colors">
                               {patient.name}
                             </div>
-                            <div className="text-xs text-slate-400 font-mono">
+                            <div className="text-xs text-slate-400">
                               {patient.mrn} • {patient.age}y/o {patient.gender}
                             </div>
                           </td>
@@ -547,7 +814,7 @@ export default function DoctorTriagePage() {
                             <div className="text-xs font-semibold text-slate-700 max-w-xs truncate">
                               {patient.complaint}
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
+                            <div className="text-[11px] text-slate-400 mt-0.5">
                               HR: {patient.vitals.hr} | SpO2: {patient.vitals.spo2}
                             </div>
                           </td>
@@ -560,8 +827,9 @@ export default function DoctorTriagePage() {
                             {patient.wait}
                           </td>
                           <td className="py-4 px-6 text-right">
-                            <button className="px-3.5 py-1.5 bg-slate-100 group-hover:bg-red-600 group-hover:text-white text-slate-700 rounded-lg text-xs font-bold transition cursor-pointer">
-                              Review / Assign
+                            <button className="px-3.5 py-1.5 bg-slate-100 group-hover:bg-red-600 group-hover:text-white text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1 ml-auto cursor-pointer">
+                              <span>Admit / Consult</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         </tr>
@@ -579,16 +847,16 @@ export default function DoctorTriagePage() {
               <div className="p-4 bg-red-50/50 border-b border-red-100 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-red-800">
                   <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  Active caseload assigned to Dr. Sarah Jenkins. Mark complete upon recovery to clear bed status.
+                  Active Inpatient admissions occupying Master Beds. Discharging frees the allocated bed immediately.
                 </div>
-                <span className="text-xs font-semibold text-slate-500">Live Bed Monitoring</span>
+                <span className="text-xs font-semibold text-slate-500">Live Master Bed Sync</span>
               </div>
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="py-3.5 px-6">Assigned Patient</th>
-                    <th className="py-3.5 px-4">Bed & Telemetry</th>
-                    <th className="py-3.5 px-4">Treatment Status</th>
+                    <th className="py-3.5 px-4">Ward & Allocated Bed</th>
+                    <th className="py-3.5 px-4">Active Prescriptions</th>
                     <th className="py-3.5 px-6 text-right">Clinical Outcome Action</th>
                   </tr>
                 </thead>
@@ -596,7 +864,7 @@ export default function DoctorTriagePage() {
                   {filteredCaseload.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="py-12 text-center text-slate-400">
-                        No active patients currently assigned to your caseload. Review incoming triage queue to assign beds.
+                        No active inpatients currently assigned to your caseload. Review incoming triage queue to admit patients to Ward Beds.
                       </td>
                     </tr>
                   ) : (
@@ -604,24 +872,32 @@ export default function DoctorTriagePage() {
                       <tr key={p.id} className="hover:bg-slate-50/80 transition">
                         <td className="py-4 px-6">
                           <div className="font-bold text-slate-900">{p.name}</div>
-                          <div className="text-xs text-slate-400 font-mono">
+                          <div className="text-xs text-slate-400">
                             {p.mrn} • {p.age}y/o {p.gender}
                           </div>
                         </td>
                         <td className="py-4 px-4">
                           <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                            {p.bed}
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            {p.wardName || 'Ward Bed'} • <span className="text-red-600 font-extrabold">{p.bed}</span>
                           </div>
-                          <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                            HR: {p.vitals.hr} | BP: {p.vitals.bp} | SpO2: {p.vitals.spo2}
+                          <div className="text-[11px] text-slate-400 mt-0.5">
+                            HR: {p.vitals?.hr || '74 bpm'} | BP: {p.vitals?.bp || '120/80'} | SpO2: {p.vitals?.spo2 || '98%'}
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            {p.status}
-                          </span>
-                          <p className="text-[10px] text-slate-400 mt-1">Assigned {p.assignedAt}</p>
+                          {p.prescriptions && p.prescriptions.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.prescriptions.map((rx, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                  <Pill className="w-2.5 h-2.5" />
+                                  {rx.medication}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Standard Hospital IV Protocol</span>
+                          )}
                         </td>
                         <td className="py-4 px-6 text-right">
                           <button
@@ -629,7 +905,7 @@ export default function DoctorTriagePage() {
                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 ml-auto cursor-pointer"
                           >
                             <Check className="w-4 h-4" />
-                            Mark Recovered
+                            Mark Recovered & Free Bed
                           </button>
                         </td>
                       </tr>
@@ -648,6 +924,7 @@ export default function DoctorTriagePage() {
                   <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="py-3.5 px-6">Patient & MRN</th>
                     <th className="py-3.5 px-4">Initial Diagnosis</th>
+                    <th className="py-3.5 px-4">Pathway</th>
                     <th className="py-3.5 px-4 text-center">Discharge Time</th>
                     <th className="py-3.5 px-6 text-right">Recovery Status</th>
                   </tr>
@@ -655,7 +932,7 @@ export default function DoctorTriagePage() {
                 <tbody className="divide-y divide-slate-100 text-sm font-medium">
                   {filteredRecovered.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-slate-400">
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
                         No discharge records found.
                       </td>
                     </tr>
@@ -664,9 +941,14 @@ export default function DoctorTriagePage() {
                       <tr key={p.id} className="hover:bg-slate-50/80 transition">
                         <td className="py-4 px-6">
                           <div className="font-bold text-slate-900">{p.name}</div>
-                          <div className="text-xs text-slate-400 font-mono">{p.mrn}</div>
+                          <div className="text-xs text-slate-400">{p.mrn}</div>
                         </td>
                         <td className="py-4 px-4 text-xs font-medium text-slate-700">{p.diagnosis}</td>
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                            {p.careType || 'Inpatient'}
+                          </span>
+                        </td>
                         <td className="py-4 px-4 text-center text-xs font-semibold text-slate-500">
                           {p.dischargeTime}
                         </td>
@@ -697,7 +979,7 @@ export default function DoctorTriagePage() {
               records in active view
             </span>
             <span className="flex items-center gap-1.5 text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Live Telemetry Stream Connected
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Live Telemetry & Bed Master Connected
             </span>
           </div>
         </div>
@@ -708,7 +990,7 @@ export default function DoctorTriagePage() {
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
             <h3 className="text-base font-bold text-slate-900 mb-1">Risk Breakdown</h3>
             <p className="text-xs text-slate-500 mb-6">Distribution of active ED queue by ESI triage acuity.</p>
-            <div className="relative flex items-center justify-center h-60">
+            <div className="relative flex items-center justify-center h-52">
               <canvas ref={chartRef}></canvas>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
@@ -727,40 +1009,49 @@ export default function DoctorTriagePage() {
             </div>
           </div>
 
-          {/* Physician Quick Actions Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center text-white font-bold">
-                MD
+          {/* Ward Bed Matrix Quick Peek */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-indigo-600" />
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Live Ward Bed Availability</h4>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">Attending Physician Protocol</h4>
-                <p className="text-[11px] text-slate-400">Dr. Sarah Jenkins • Shift #481</p>
-              </div>
+              <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
+                Master Matrix
+              </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Once patient vitals normalize and clinical stabilization is reached, use{' '}
-              <span className="text-emerald-400 font-semibold">Mark Recovered</span> to clear bed occupancy and initiate post-discharge telemetry.
-            </p>
-            <button
-              onClick={() => setActiveTab('caseload')}
-              className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <UserCheck className="w-4 h-4 text-red-400" />
-              Review My Active Caseload
-            </button>
+            <div className="space-y-3 mt-4">
+              {wards.map((ward) => {
+                const availableCount = ward.beds.filter((b) => b.status === 'Available').length;
+                return (
+                  <div key={ward.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">{ward.name}</p>
+                      <p className="text-[10px] text-slate-400">{ward.floor} • ₹{ward.tariff.toLocaleString()}/day</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-xs font-extrabold ${availableCount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {availableCount} / {ward.beds.length}
+                      </span>
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Free Beds</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* PATIENT DETAIL & BED ASSIGNMENT MODAL */}
+      {/* COMPREHENSIVE CLINICAL INTAKE, BED ALLOCATION & PRESCRIPTION MODAL */}
       {selectedPatient && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in duration-200">
-            <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+          <div className="bg-white rounded-3xl max-w-3xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in duration-200 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center font-bold text-white shadow-md">
-                  ESI
+                  {selectedPatient.esi}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">{selectedPatient.name}</h3>
@@ -777,8 +1068,9 @@ export default function DoctorTriagePage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Vital Signs Bar */}
+            {/* Modal Scrollable Body */}
+            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+              {/* Vital Signs Telemetry */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                   Real-Time Vitals Telemetry
@@ -807,60 +1099,259 @@ export default function DoctorTriagePage() {
               <div className="p-4 bg-red-50/60 rounded-2xl border border-red-200/60">
                 <div className="flex items-center gap-2 mb-2 text-red-700 font-bold text-xs uppercase tracking-wider">
                   <Zap className="w-4 h-4" />
-                  AI Risk Assessment Rationale
+                  AI Clinical Assessment Rationale
                 </div>
                 <p className="text-sm text-slate-700 leading-relaxed">{selectedPatient.rationale}</p>
               </div>
 
-              {/* Bed Allocation & Override Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Allocate ED Bed / Bay
-                  </label>
-                  <select
-                    value={selectedBed}
-                    onChange={(e) => setSelectedBed(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              {/* Pathway Selector: Inpatient Admission vs Outpatient Consultation */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                  Select Clinical Care Pathway
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCarePathway('Inpatient')}
+                    className={`p-4 rounded-2xl border text-left transition cursor-pointer flex items-center gap-3 ${
+                      carePathway === 'Inpatient'
+                        ? 'bg-red-50/70 border-red-500 ring-2 ring-red-500/20'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
                   >
-                    <option value="Bed ED-01 (Trauma Bay)">Bed ED-01 (Trauma Bay)</option>
-                    <option value="Bed ED-03 (Rapid Assessment)">Bed ED-03 (Rapid Assessment)</option>
-                    <option value="Bed ED-05 (Cardiac Monitored)">Bed ED-05 (Cardiac Monitored)</option>
-                    <option value="Bed ED-07 (General Observation)">Bed ED-07 (General Observation)</option>
-                  </select>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${carePathway === 'Inpatient' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      <Bed className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">Inpatient Ward Admission</h5>
+                      <p className="text-[11px] text-slate-500">Allocate Live Master Bed & Inpatient Chart</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCarePathway('Outpatient')}
+                    className={`p-4 rounded-2xl border text-left transition cursor-pointer flex items-center gap-3 ${
+                      carePathway === 'Outpatient'
+                        ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/20'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${carePathway === 'Outpatient' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">Outpatient Consultation</h5>
+                      <p className="text-[11px] text-slate-500">Direct Prescription Authoring & Discharge</p>
+                    </div>
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Physician Acuity Override
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
+              </div>
+
+              {/* Conditional Inpatient Bed Matrix Selection */}
+              {carePathway === 'Inpatient' && (
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <Building className="w-4 h-4 text-red-600" />
+                    Ward & Bed Master Allocation
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        Select Target Ward / Department
+                      </label>
+                      <select
+                        value={selectedWardId}
+                        onChange={(e) => {
+                          const wId = e.target.value;
+                          setSelectedWardId(wId);
+                          const w = wards.find((ward) => ward.id === wId);
+                          const free = w?.beds.find((b) => b.status === 'Available');
+                          setSelectedBedName(free ? free.name : '');
+                        }}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      >
+                        {wards.map((w) => {
+                          const freeCount = w.beds.filter((b) => b.status === 'Available').length;
+                          return (
+                            <option key={w.id} value={w.id}>
+                              {w.name} ({freeCount} available beds - ₹{w.tariff}/day)
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        Select Available Bed
+                      </label>
+                      <select
+                        value={selectedBedName}
+                        onChange={(e) => setSelectedBedName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      >
+                        {availableBedsInSelectedWard.length === 0 ? (
+                          <option value="">No beds currently available in this ward</option>
+                        ) : (
+                          availableBedsInSelectedWard.map((bed) => (
+                            <option key={bed.id} value={bed.name}>
+                              {bed.name} (Ready for Admission)
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Prescription Authoring Module */}
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-purple-900 uppercase tracking-wider">
+                    <Pill className="w-4 h-4 text-purple-600" />
+                    Doctor Prescription Authoring Engine
+                  </div>
+                  <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                    Syncs to Daily Reminders
+                  </span>
+                </div>
+
+                {/* Prescription Input Row */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 text-xs">
+                  <div className="md:col-span-4">
+                    <input
+                      type="text"
+                      placeholder="Medication Name (e.g. Atorvastatin 20mg)"
+                      value={rxDrugName}
+                      onChange={(e) => setRxDrugName(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <select
+                      value={rxDosage}
+                      onChange={(e) => setRxDosage(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl font-medium focus:outline-none"
+                    >
+                      <option value="1 Tablet">1 Tablet</option>
+                      <option value="2 Tablets">2 Tablets</option>
+                      <option value="1 Capsule">1 Capsule</option>
+                      <option value="5 ml">5 ml Syrup</option>
+                      <option value="1 Injection">1 Injection</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <select
+                      value={rxMeal}
+                      onChange={(e) => setRxMeal(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl font-medium focus:outline-none"
+                    >
+                      <option value="After Food">After Food</option>
+                      <option value="Before Food">Before Food</option>
+                      <option value="With Food">With Food</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <select
+                      value={rxDuration}
+                      onChange={(e) => setRxDuration(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl font-medium focus:outline-none"
+                    >
+                      <option value="3 Days">3 Days</option>
+                      <option value="5 Days">5 Days</option>
+                      <option value="7 Days">7 Days</option>
+                      <option value="14 Days">14 Days</option>
+                      <option value="30 Days">30 Days</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
                     <button
                       type="button"
-                      onClick={() => showToast('Acuity level adjusted to ESI 1')}
-                      className="py-2 border border-red-300 rounded-xl text-[11px] font-bold bg-red-50 text-red-700 hover:bg-red-100 transition text-center cursor-pointer"
+                      onClick={handleAddPrescriptionDraft}
+                      className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      ESI 1
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => showToast('Acuity level adjusted to ESI 2')}
-                      className="py-2 border border-amber-300 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition text-center cursor-pointer"
-                    >
-                      ESI 2
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => showToast('Acuity level adjusted to ESI 3')}
-                      className="py-2 border border-blue-300 rounded-xl text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition text-center cursor-pointer"
-                    >
-                      ESI 3
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Rx</span>
                     </button>
                   </div>
                 </div>
+
+                {/* Timing Checkboxes */}
+                <div className="flex items-center gap-4 text-xs font-semibold text-purple-900">
+                  <span className="text-[11px] text-purple-700 font-bold uppercase">Dose Schedule:</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rxTiming.morning}
+                      onChange={(e) => setRxTiming({ ...rxTiming, morning: e.target.checked })}
+                      className="accent-purple-600"
+                    />
+                    <span>Morning</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rxTiming.noon}
+                      onChange={(e) => setRxTiming({ ...rxTiming, noon: e.target.checked })}
+                      className="accent-purple-600"
+                    />
+                    <span>Afternoon</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rxTiming.night}
+                      onChange={(e) => setRxTiming({ ...rxTiming, night: e.target.checked })}
+                      className="accent-purple-600"
+                    />
+                    <span>Night</span>
+                  </label>
+                </div>
+
+                {/* Authored Prescriptions Table in Modal */}
+                {prescriptionsDraft.length > 0 && (
+                  <div className="mt-3 bg-white rounded-xl border border-purple-200 overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-purple-100/60 font-bold text-purple-900 border-b border-purple-200">
+                        <tr>
+                          <th className="py-2 px-3">Medication</th>
+                          <th className="py-2 px-3">Dosage</th>
+                          <th className="py-2 px-3">Schedule</th>
+                          <th className="py-2 px-3">Instructions</th>
+                          <th className="py-2 px-3">Duration</th>
+                          <th className="py-2 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-purple-100">
+                        {prescriptionsDraft.map((rx) => (
+                          <tr key={rx.id}>
+                            <td className="py-2 px-3 font-bold text-slate-800">{rx.medication}</td>
+                            <td className="py-2 px-3 text-slate-600">{rx.dosage}</td>
+                            <td className="py-2 px-3 font-semibold text-purple-700">{rx.timing.join(', ')}</td>
+                            <td className="py-2 px-3 text-slate-600">{rx.meal}</td>
+                            <td className="py-2 px-3 text-slate-600">{rx.duration}</td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePrescriptionDraft(rx.id)}
+                                className="text-red-500 hover:text-red-700 p-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            {/* Modal Actions Footer */}
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between flex-shrink-0">
               <button
                 onClick={() => setSelectedPatient(null)}
                 className="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition cursor-pointer"
@@ -868,18 +1359,20 @@ export default function DoctorTriagePage() {
                 Cancel
               </button>
               <button
-                onClick={handleAssignToCaseload}
+                onClick={handleCommitClinicalAction}
                 className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
               >
-                <UserCheck className="w-4 h-4" />
-                <span>Assign to My Caseload</span>
+                <FileCheck className="w-4 h-4" />
+                <span>
+                  {carePathway === 'Inpatient' ? 'Confirm Inpatient Admission & Prescriptions' : 'Finalize Outpatient Consultation & Dispense Rx'}
+                </span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MARK RECOVERED & DISCHARGE MODAL */}
+      {/* MARK RECOVERED & BED RELEASE DISCHARGE MODAL */}
       {dischargeTarget && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in duration-200">
@@ -889,7 +1382,7 @@ export default function DoctorTriagePage() {
                   <CheckCircle2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">Confirm Patient Recovery & Discharge</h3>
+                  <h3 className="text-base font-bold">Discharge & Release Bed</h3>
                   <p className="text-xs text-emerald-100">
                     {dischargeTarget.name} ({dischargeTarget.mrn}) • {dischargeTarget.bed}
                   </p>
@@ -905,7 +1398,7 @@ export default function DoctorTriagePage() {
 
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600 leading-relaxed">
-                By confirming, you certify that the patient's acute symptoms have resolved, vital signs are stabilized within normal limits, and outpatient care instructions have been finalized.
+                Confirming recovery will change the bed <strong className="text-slate-900">{dischargeTarget.bed}</strong> status back to <strong className="text-emerald-600">Available</strong> in the Hospital Ward Master.
               </p>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
@@ -918,7 +1411,7 @@ export default function DoctorTriagePage() {
                 >
                   <option value="Full Recovery - Discharged Home">Full Recovery - Discharged Home</option>
                   <option value="Symptom Resolution - Follow-Up in 48h">Symptom Resolution - Follow-Up in 48h</option>
-                  <option value="Stabilized - Transferred to Inpatient Ward">Stabilized - Transferred to Inpatient Ward</option>
+                  <option value="Transferred to Specialty Outpatient Care">Transferred to Specialty Outpatient Care</option>
                 </select>
               </div>
               <div>
@@ -947,7 +1440,7 @@ export default function DoctorTriagePage() {
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                Mark Recovered & Discharge
+                Confirm & Free Bed
               </button>
             </div>
           </div>
